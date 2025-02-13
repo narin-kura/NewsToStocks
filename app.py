@@ -9,7 +9,7 @@ from transformers import pipeline
 import yfinance as yf
 from flask import Flask, render_template, request
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.')
 
 ## Step 2: Set Up News Scraping
 news_sources = [
