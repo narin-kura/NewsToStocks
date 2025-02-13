@@ -1,8 +1,9 @@
 flask
 transformers
-torch
+gunicorn
 pandas
 numpy
 yfinance
 beautifulsoup4
 requests
+textblob
