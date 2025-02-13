@@ -1,3 +1,9 @@
+---
+title: investment-ai-agent/
+sdk: docker
+colorTo: green
+pinned: true
+---
 # Investment Recommendation AI Agent
 
 This AI agent scrapes financial news, analyzes sentiment, and recommends stocks based on correlations.
