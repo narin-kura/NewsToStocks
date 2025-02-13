@@ -6,12 +6,41 @@
     <title>Investment Suggestions</title>
 </head>
 <body>
-    <h1>Top Investment Suggestions</h1>
+    <h1>Investment Recommendation AI</h1>
+
+    <!-- Form for User Input -->
+    <form method="POST">
+        <label for="sector">Enter Sector (optional):</label>
+        <input type="text" id="sector" name="sector" placeholder="e.g., tech, finance">
+        
+        <br><br>
+        
+        <label for="custom_url">Add a Custom News Website:</label>
+        <input type="text" id="custom_url" name="custom_url" placeholder="https://example.com">
+        
+        <br><br>
+        
+        <button type="submit">Get Recommendations</button>
+    </form>
+
+    <h2>Top Investment Suggestions</h2>
     <ul>
         {% for rec in recommendations %}
-            <li>{{ rec.Symbol }} - Correlation: {{ rec.Correlation }} - Sentiment: {{ rec.Avg Sentiment }}</li>
+            <li>
+                <strong>{{ rec.Symbol }}</strong> - 
+                Correlation: {{ rec.Correlation|round(2) }} - 
+                Sentiment: {{ rec["Avg Sentiment"]|round(2) }}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h3>Custom News Sources</h3>
+    <ul>
+        {% for source in custom_sources %}
+            <li>{{ source }}</li>
         {% endfor %}
     </ul>
 </body>
 </html>
+
 
