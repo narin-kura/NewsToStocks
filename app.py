@@ -21,20 +21,6 @@ news_sources = [
 custom_sources = []
 
 
-# Map common company names to stock symbols
-company_to_symbol = {
-    "Apple": "AAPL",
-    "Microsoft": "MSFT",
-    "Tesla": "TSLA",
-    "Amazon": "AMZN",
-    "Google": "GOOGL",
-    "Meta": "META",
-    "Netflix": "NFLX",
-    "Nvidia": "NVDA",
-    "AMD": "AMD",
-    "IBM": "IBM"
-}
-
 def get_stock_symbol(headline):
     """
     Extracts stock symbols based on company mentions in news headlines.
@@ -75,6 +61,15 @@ def get_stock_symbol(headline):
     """
     Extracts stock symbols based on company mentions in news headlines.
     """
+    company_to_symbol = {
+        'Apple': 'AAPL', 'Microsoft': 'MSFT', 'Tesla': 'TSLA', 'Amazon': 'AMZN', 'Google': 'GOOGL',
+        'Meta': 'META', 'Netflix': 'NFLX', 'Nvidia': 'NVDA', 'AMD': 'AMD', 'IBM': 'IBM',
+        'Disney': 'DIS', 'Intel': 'INTC', 'Cisco': 'CSCO', 'Oracle': 'ORCL', 'PayPal': 'PYPL',
+        'Adobe': 'ADBE', 'Salesforce': 'CRM', 'Berkshire Hathaway': 'BRK.B', 'Johnson & Johnson': 'JNJ',
+        'JPMorgan Chase': 'JPM', 'Visa': 'V', 'Mastercard': 'MA', 'Walmart': 'WMT', 'Procter & Gamble': 'PG',
+        'ExxonMobil': 'XOM', 'Chevron': 'CVX', 'Pfizer': 'PFE', 'Coca-Cola': 'KO', 'Pepsi': 'PEP'
+    }
+
     for company, symbol in company_to_symbol.items():
         if company.lower() in headline.lower():
             return symbol
