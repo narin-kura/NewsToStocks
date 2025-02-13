@@ -1,9 +1,9 @@
 flask
-transformers
 gunicorn
+beautifulsoup4
 pandas
 numpy
-yfinance
-beautifulsoup4
-requests
 textblob
+yfinance
+requests
+
