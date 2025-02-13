@@ -75,7 +75,7 @@ def get_stock_symbol(headline):
             return symbol
     return None
 
-def calculate_correlation(sentiments):
+"""def calculate_correlation(sentiments):
     news_df = pd.DataFrame(sentiments, columns=['Headline', 'Sentiment', 'Score'])
     positive_news = news_df[news_df['Sentiment'] == 'POSITIVE']
     positive_news['Symbol'] = positive_news['Headline'].apply(get_stock_symbol)
@@ -117,8 +117,45 @@ def calculate_correlation(sentiments):
     correlation_df = pd.DataFrame(correlations, columns=['Symbol', 'Correlation', 'Avg Sentiment'])
     recommendations = correlation_df.sort_values(by='Correlation', ascending=False).head(4)
 
-    return recommendations
+    return recommendations """
 
+def calculate_correlation(sentiments):
+    news_df = pd.DataFrame(sentiments, columns=['Headline', 'Sentiment', 'Score'])
+    if news_df.empty:
+        return pd.DataFrame([], columns=['Symbol', 'Correlation', 'Avg Sentiment'])
+    
+    positive_news = news_df[news_df['Sentiment'] == 'POSITIVE']
+    positive_news['Symbol'] = positive_news['Headline'].apply(get_stock_symbol)
+    positive_news = positive_news.dropna(subset=['Symbol'])
+
+    correlations = []
+    for symbol in positive_news['Symbol'].unique():
+        try:
+            stock_data = yf.download(symbol, period='1mo', interval='1d')
+            if stock_data.empty:
+                raise Exception("Empty data")
+        except:
+            api_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey=demo'
+            response = requests.get(api_url)
+            data = response.json()
+            if 'Time Series (Daily)' in data:
+                stock_data = pd.DataFrame.from_dict(data['Time Series (Daily)'], orient='index')
+                stock_data = stock_data.astype(float)
+                stock_data['Returns'] = stock_data['4. close'].pct_change()
+            else:
+                continue
+        
+        sentiment_scores = positive_news[positive_news['Symbol'] == symbol]['Score']
+        sentiment_avg = np.mean(sentiment_scores)
+        correlation = stock_data['Returns'].corr(pd.Series([sentiment_avg] * len(stock_data)))
+        correlations.append((symbol, correlation, sentiment_avg))
+    
+    if not correlations:
+        return pd.DataFrame([], columns=['Symbol', 'Correlation', 'Avg Sentiment'])
+
+    correlation_df = pd.DataFrame(correlations, columns=['Symbol', 'Correlation', 'Avg Sentiment'])
+    recommendations = correlation_df.sort_values(by='Correlation', ascending=False).head(4)
+    return recommendations
 
 ## Step 5: Web Interface
 @app.route('/', methods=['GET', 'POST'])
