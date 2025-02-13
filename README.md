@@ -1,6 +1,6 @@
 ---
 title: investment-ai-agent/
-sdk: static
+sdk: docker
 colorTo: green
 pinned: true
 ---
