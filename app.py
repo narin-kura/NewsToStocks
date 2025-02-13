@@ -106,12 +106,13 @@ def calculate_correlation(sentiments):
 
     if not correlations:
         # Provide a default list of trending stocks if no recommendations found
-        return pd.DataFrame([
-            {"Symbol": "AAPL", "Correlation": 0.8, "Avg Sentiment": 0.7},
-            {"Symbol": "MSFT", "Correlation": 0.75, "Avg Sentiment": 0.65},
-            {"Symbol": "TSLA", "Correlation": 0.72, "Avg Sentiment": 0.6},
-            {"Symbol": "NVDA", "Correlation": 0.7, "Avg Sentiment": 0.55}
-        ])
+        #return pd.DataFrame([
+        #    {"Symbol": "AAPL", "Correlation": 0.8, "Avg Sentiment": 0.7},
+        #    {"Symbol": "MSFT", "Correlation": 0.75, "Avg Sentiment": 0.65},
+        #    {"Symbol": "TSLA", "Correlation": 0.72, "Avg Sentiment": 0.6},
+        #    {"Symbol": "NVDA", "Correlation": 0.7, "Avg Sentiment": 0.55}
+        #])
+        return 'Unable to fetch the news or generate recommendations at this time.'
 
     correlation_df = pd.DataFrame(correlations, columns=['Symbol', 'Correlation', 'Avg Sentiment'])
     recommendations = correlation_df.sort_values(by='Correlation', ascending=False).head(4)
