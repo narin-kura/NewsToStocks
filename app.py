@@ -20,6 +20,31 @@ news_sources = [
 ]
 custom_sources = []
 
+
+# Map common company names to stock symbols
+company_to_symbol = {
+    "Apple": "AAPL",
+    "Microsoft": "MSFT",
+    "Tesla": "TSLA",
+    "Amazon": "AMZN",
+    "Google": "GOOGL",
+    "Meta": "META",
+    "Netflix": "NFLX",
+    "Nvidia": "NVDA",
+    "AMD": "AMD",
+    "IBM": "IBM"
+}
+
+def get_stock_symbol(headline):
+    """
+    Extracts stock symbols based on company mentions in news headlines.
+    """
+    for company, symbol in company_to_symbol.items():
+        if company.lower() in headline.lower():
+            return symbol
+    return None  # If no company match, return None
+
+
 def scrape_news():
     all_sources = news_sources + custom_sources
     news_data = []
@@ -47,7 +72,13 @@ def analyze_sentiments(news_data):
 
 def get_stock_symbol(headline):
     # Placeholder function for entity recognition
-    return 'AAPL' if 'Apple' in headline else None
+    """
+    Extracts stock symbols based on company mentions in news headlines.
+    """
+    for company, symbol in company_to_symbol.items():
+        if company.lower() in headline.lower():
+            return symbol
+    return None
 
 def calculate_correlation(sentiments):
     news_df = pd.DataFrame(sentiments, columns=['Headline', 'Sentiment', 'Score'])
