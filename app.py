@@ -38,9 +38,12 @@ def scrape_news():
         response = requests.get(source)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            headlines = soup.find_all('h2')
-            for headline in headlines:
-                news_data.append(headline.text)
+            articles = soup.find_all('article')
+            for article in articles:
+                paragraphs = article.find_all('p')
+                full_text = ' '.join([p.get_text() for p in paragraphs])
+                if full_text:
+                    news_data.append(full_text)
     return news_data
 
 ## Step 3: Sentiment Analysis
