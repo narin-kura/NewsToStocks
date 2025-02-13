@@ -12,6 +12,7 @@ from textblob import TextBlob
 import yfinance as yf
 from flask import Flask, render_template, request
 import json
+import os
 
 app = Flask(__name__, template_folder='.')
 
@@ -159,7 +160,7 @@ def home():
 
 
 if __name__ == '__main__':
-     import os
+  
     port = int(os.environ.get("PORT", 7860))
     app.run(host='0.0.0.0', port=7860, debug=True)
 
