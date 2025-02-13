@@ -1,0 +1,8 @@
+flask
+transformers
+torch
+pandas
+numpy
+yfinance
+beautifulsoup4
+requests
