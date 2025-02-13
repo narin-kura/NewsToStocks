@@ -63,7 +63,7 @@ def calculate_correlation(sentiments):
                 raise Exception("Empty data")
         except:
             # Use Alpha Vantage as a backup API
-            api_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey=demo'
+            api_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey=LCIIJFIRJO051VXB'
             response = requests.get(api_url)
             data = response.json()
             if 'Time Series (Daily)' in data:
