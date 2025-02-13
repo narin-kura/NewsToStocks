@@ -84,10 +84,25 @@ def home():
     return render_template('index.html', recommendations=recommendations, sector=sector, custom_sources=custom_sources)
 @app.route('/')
 def home():
+    sector = request.form.get('sector')  # Get user input
+    custom_url = request.form.get('custom_url')  # Get custom news website
+
+    # Add custom news source if provided
+    if custom_url and custom_url not in custom_sources:
+        custom_sources.append(custom_url)
+
     news_data = scrape_news()
     sentiments = analyze_sentiments(news_data)
     recommendations = calculate_correlation(sentiments)
-    return render_template('index.html', recommendations=recommendations.to_dict('records'))
+
+    # Filter recommendations by sector if provided
+    if sector:
+        recommendations = [rec for rec in recommendations.to_dict('records') if sector.lower() in rec['Symbol'].lower()]
+    else:
+        recommendations = recommendations.to_dict('records')
+
+    return render_template('index.html', recommendations=recommendations, sector=sector, custom_sources=custom_sources)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    #app.run(debug=True)
+     app.run(host='0.0.0.0', port=7860)
