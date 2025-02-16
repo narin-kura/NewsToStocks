@@ -106,7 +106,7 @@ def calculate_correlation(sentiments):
             if stock_data.empty:
                 raise Exception("Empty data")
         except:
-            api_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey=demo'
+            api_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey=LCIIJFIRJO051VXB'
             response = requests.get(api_url)
             data = response.json()
             if 'Time Series (Daily)' in data:
