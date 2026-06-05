@@ -205,6 +205,107 @@ _all_symbols = set(company_to_symbol.values())
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; NewsToStocks/1.0)'}
 
+# ── S&P 500 auto-loader ───────────────────────────────────────────────────────
+_SP500_SECTOR_MAP = {
+    'Information Technology': ['tech'],
+    'Financials':             ['finance'],
+    'Health Care':            ['healthcare'],
+    'Consumer Discretionary': ['consumer', 'retail'],
+    'Consumer Staples':       ['consumer', 'food'],
+    'Industrials':            ['industrial'],
+    'Communication Services': ['media', 'telecom'],
+    'Energy':                 ['energy'],
+    'Materials':              ['industrial'],
+    'Real Estate':            ['reit'],
+    'Utilities':              ['energy'],
+}
+_SP500_SUBSECTOR_MAP = {
+    'Semiconductors':                          ['semiconductor'],
+    'Semiconductor Materials & Equipment':     ['semiconductor'],
+    'Application Software':                    ['tech', 'cloud'],
+    'Systems Software':                        ['tech'],
+    'Data Processing & Outsourced Services':   ['tech', 'cloud'],
+    'Internet Services & Infrastructure':      ['cloud'],
+    'IT Consulting & Other Services':          ['tech'],
+    'Electronic Equipment & Instruments':      ['hardware'],
+    'Technology Hardware, Storage & Peripherals': ['hardware'],
+    'Biotechnology':                           ['biotech'],
+    'Pharmaceuticals':                         ['pharma'],
+    'Life Sciences Tools & Services':          ['biotech'],
+    'Health Care Equipment & Supplies':        ['healthcare'],
+    'Health Care Facilities':                  ['healthcare'],
+    'Managed Health Care':                     ['healthcare'],
+    'Aerospace & Defense':                     ['defense', 'space'],
+    'Ground Transportation':                   ['automotive'],
+    'Automobile Manufacturers':                ['automotive', 'ev'],
+    'Auto Parts & Equipment':                  ['automotive'],
+    'Movies & Entertainment':                  ['media', 'gaming'],
+    'Interactive Media & Services':            ['media'],
+    'Interactive Home Entertainment':          ['gaming'],
+    'Wireless Telecommunication Services':     ['telecom'],
+    'Diversified Telecommunication Services':  ['telecom'],
+    'Cable & Satellite':                       ['media', 'telecom'],
+    'Internet Retail':                         ['retail', 'ecommerce'],
+    'Broadline Retail':                        ['retail'],
+    'Specialty Retail':                        ['retail'],
+    'Hotels, Restaurants & Leisure':           ['travel', 'food', 'hospitality'],
+    'Restaurants':                             ['food', 'restaurant'],
+    'Airlines':                                ['airline', 'travel'],
+    'Cruise Lines':                            ['travel', 'hospitality'],
+    'Lodging':                                 ['hospitality', 'travel'],
+    'Electric Utilities':                      ['energy', 'renewable'],
+    'Renewable Electricity':                   ['energy', 'renewable'],
+    'Oil, Gas & Consumable Fuels':             ['energy'],
+    'Banks':                                   ['finance'],
+    'Diversified Banks':                       ['finance'],
+    'Investment Banking & Brokerage':          ['finance'],
+    'Asset Management & Custody Banks':        ['finance'],
+    'Consumer Finance':                        ['finance'],
+    'Insurance':                               ['finance'],
+}
+
+
+def _load_sp500():
+    try:
+        resp = requests.get(
+            'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies',
+            timeout=15, headers=HEADERS
+        )
+        soup = BeautifulSoup(resp.content, 'lxml')
+        table = soup.find('table', {'id': 'constituents'})
+        if not table:
+            print('S&P 500: table not found on Wikipedia')
+            return
+        count = 0
+        for row in table.find_all('tr')[1:]:
+            cols = row.find_all('td')
+            if len(cols) < 3:
+                continue
+            ticker = cols[0].get_text(strip=True)
+            name   = cols[1].get_text(strip=True)
+            gics   = cols[2].get_text(strip=True) if len(cols) > 2 else ''
+            sub    = cols[3].get_text(strip=True) if len(cols) > 3 else ''
+
+            company_to_symbol[name] = ticker
+            _all_symbols.add(ticker)
+
+            target_sectors = set()
+            for s in _SP500_SECTOR_MAP.get(gics, []):
+                target_sectors.add(s)
+            for s in _SP500_SUBSECTOR_MAP.get(sub, []):
+                target_sectors.add(s)
+            for s in target_sectors:
+                if s in sector_to_symbols:
+                    sector_to_symbols[s].add(ticker)
+            count += 1
+        print(f'S&P 500: loaded {count} components')
+    except Exception as e:
+        print(f'S&P 500 load failed: {e}')
+
+
+_load_sp500()
+# ─────────────────────────────────────────────────────────────────────────────
+
 _article_store = {}  # url/preview-key -> processed article (accumulated, never cleared)
 _news_cache = {'ts': 0}
 _sector_cache = {}   # sector_key -> {'recs': [...], 'ts': float}
