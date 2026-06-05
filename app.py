@@ -538,9 +538,42 @@ TABS = [
 ]
 
 
+SORT_OPTIONS = [
+    ('score', 'Top Picks'),
+    ('alpha', 'A → Z'),
+    ('gainers', '▲ Gainers'),
+    ('losers',  '▼ Losers'),
+]
+
+
+def _apply_sort(recs, sort):
+    if sort == 'alpha':
+        return sorted(recs, key=lambda r: r['Symbol'])
+    if sort == 'gainers':
+        return sorted(
+            recs,
+            key=lambda r: r['Price']['change_pct'] if r['Price'] and r['Price']['change_pct'] is not None else -999,
+            reverse=True,
+        )
+    if sort == 'losers':
+        return sorted(
+            recs,
+            key=lambda r: r['Price']['change_pct'] if r['Price'] and r['Price']['change_pct'] is not None else 999,
+        )
+    return recs  # default: score (pre-sorted by rank)
+
+
+def _perf_summary(recs):
+    up = sum(1 for r in recs if r['Price'] and r['Price'].get('change_pct') is not None and r['Price']['change_pct'] > 0)
+    down = sum(1 for r in recs if r['Price'] and r['Price'].get('change_pct') is not None and r['Price']['change_pct'] < 0)
+    flat = len(recs) - up - down
+    return {'up': up, 'down': down, 'flat': flat, 'total': len(recs)}
+
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
     sector = (request.args.get('sector') or request.form.get('sector', '')).strip()
+    sort   = request.args.get('sort', 'score').strip()
     custom_url = request.form.get('custom_url', '').strip()
     if custom_url and custom_url not in custom_sources:
         custom_sources.append(custom_url)
@@ -548,18 +581,19 @@ def home():
     news_data, cache_ts = get_cached_news()
 
     cache_entry = _sector_cache.get(sector)
-    if cache_entry is not None:
-        recommendations = cache_entry['recs']
-    else:
-        # Background pre-compute not finished yet — compute on demand
-        recommendations = recommend_stocks(news_data, sector=sector or None)
+    recs = list(cache_entry['recs']) if cache_entry is not None else recommend_stocks(news_data, sector=sector or None)
 
+    recommendations = _apply_sort(recs, sort)
+    perf = _perf_summary(recommendations)
     cache_age_min = int((time.time() - cache_ts) / 60)
 
     return render_template(
         'index.html',
         recommendations=recommendations,
+        perf=perf,
         sector=sector,
+        sort=sort,
+        sort_options=SORT_OPTIONS,
         tabs=TABS,
         custom_sources=custom_sources,
         articles_count=len(_article_store),

@@ -94,6 +94,29 @@
                 {% endfor %}
             </nav>
 
+            <!-- Sort controls + performance bar (main view only) -->
+            {% if not search_result and not symbol_not_found %}
+            <div class="toolbar">
+                <div class="sort-pills">
+                    {% for key, label in sort_options %}
+                    <a href="?{% if sector %}sector={{ sector }}&{% endif %}sort={{ key }}"
+                       class="sort-pill {% if sort == key %}active{% endif %}">{{ label }}</a>
+                    {% endfor %}
+                </div>
+                {% if perf and perf.total > 0 %}
+                <div class="perf-bar">
+                    <span class="perf-up">▲ {{ perf.up }} up</span>
+                    <span class="perf-sep">·</span>
+                    <span class="perf-down">▼ {{ perf.down }} down</span>
+                    {% if perf.flat > 0 %}
+                    <span class="perf-sep">·</span>
+                    <span class="perf-flat">― {{ perf.flat }} flat</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
             {% if search_result %}
             <!-- Search result -->
             <div class="search-result-card">
