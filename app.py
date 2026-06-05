@@ -204,9 +204,10 @@ _all_symbols = set(company_to_symbol.values())
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; NewsToStocks/1.0)'}
 
-_news_cache = {'data': None, 'ts': 0}
-_sector_cache = {}   # sector_key -> list of recommendations (pre-computed)
-CACHE_TTL = 900  # 15 minutes
+_article_store = {}  # url/preview-key -> processed article (accumulated, never cleared)
+_news_cache = {'ts': 0}
+_sector_cache = {}   # sector_key -> {'recs': [...], 'ts': float}
+CACHE_TTL = 900  # 15 minutes — how often we scrape for new articles
 
 
 def scrape_source(source):
@@ -249,15 +250,20 @@ def scrape_news():
 
 def get_cached_news():
     now = time.time()
-    if _news_cache['data'] is not None and (now - _news_cache['ts']) < CACHE_TTL:
-        return _news_cache['data'], _news_cache['ts']
-    data = scrape_news()
-    _news_cache['data'] = data
+    if _news_cache['ts'] and (now - _news_cache['ts']) < CACHE_TTL:
+        return list(_article_store.values()), _news_cache['ts']
+
+    fresh = scrape_news()
+    # Merge into the rolling store — deduplicate by URL (or preview prefix)
+    for item in fresh:
+        key = item['url'] if item['url'] else item['preview'][:80]
+        _article_store[key] = item
+
     _news_cache['ts'] = now
-    # Pre-compute all sector results in the background
-    _sector_cache.clear()
-    threading.Thread(target=_precompute_all_sectors, args=(data,), daemon=True).start()
-    return data, now
+    all_articles = list(_article_store.values())
+    # Re-rank all sectors from the full accumulated article set (no clear)
+    threading.Thread(target=_precompute_all_sectors, args=(all_articles,), daemon=True).start()
+    return all_articles, now
 
 
 _DOLLAR_TICKER = re.compile(r'\$([A-Z]{1,5})\b')
@@ -445,7 +451,7 @@ def home():
         sector=sector,
         tabs=TABS,
         custom_sources=custom_sources,
-        articles_count=len(news_data),
+        articles_count=len(_article_store),
         cache_age_min=cache_age_min,
     )
 
