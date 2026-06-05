@@ -1,5 +1,7 @@
 import os
+import re
 import time
+import threading
 import requests
 import concurrent.futures
 from bs4 import BeautifulSoup
@@ -160,17 +162,50 @@ sector_to_symbols = {
 }
 
 news_sources = [
+    # Reuters
     'https://feeds.reuters.com/reuters/businessNews',
+    'https://feeds.reuters.com/reuters/technologyNews',
+    # Yahoo Finance
     'https://finance.yahoo.com/rss/topstories',
+    'https://finance.yahoo.com/rss/2.0/headline?s=^GSPC&region=US&lang=en-US',
+    # CNN Money
     'http://rss.cnn.com/rss/money_news_international.rss',
+    'http://rss.cnn.com/rss/money_technology.rss',
+    # MarketWatch
     'https://feeds.marketwatch.com/marketwatch/topstories/',
+    'https://feeds.marketwatch.com/marketwatch/marketpulse/',
+    # Wall Street Journal
     'https://feeds.a.dj.com/rss/RSSMarketsMain.xml',
+    'https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml',
+    # CNBC
+    'https://www.cnbc.com/id/100003114/device/rss/rss.html',
+    'https://www.cnbc.com/id/15839135/device/rss/rss.html',
+    'https://www.cnbc.com/id/20910258/device/rss/rss.html',
+    # TechCrunch (good for tech/AI stocks)
+    'https://techcrunch.com/feed/',
+    # Fortune
+    'https://fortune.com/feed/',
+    # Business Insider
+    'https://markets.businessinsider.com/rss/news',
+    # Investing.com
+    'https://www.investing.com/rss/news.rss',
+    'https://www.investing.com/rss/stock_stock_picks.rss',
+    # Nasdaq
+    'https://www.nasdaq.com/feed/rssoutbound?category=Markets',
+    # Reddit community sentiment
+    'https://www.reddit.com/r/stocks/hot/.rss',
+    'https://www.reddit.com/r/investing/hot/.rss',
+    'https://www.reddit.com/r/wallstreetbets/hot/.rss',
 ]
 custom_sources = []
+
+# Build a set of all known ticker symbols for fast $TICKER matching
+_all_symbols = set(company_to_symbol.values())
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; NewsToStocks/1.0)'}
 
 _news_cache = {'data': None, 'ts': 0}
+_sector_cache = {}   # sector_key -> list of recommendations (pre-computed)
 CACHE_TTL = 900  # 15 minutes
 
 
@@ -219,8 +254,13 @@ def get_cached_news():
     data = scrape_news()
     _news_cache['data'] = data
     _news_cache['ts'] = now
+    # Pre-compute all sector results in the background
+    _sector_cache.clear()
+    threading.Thread(target=_precompute_all_sectors, args=(data,), daemon=True).start()
     return data, now
 
+
+_DOLLAR_TICKER = re.compile(r'\$([A-Z]{1,5})\b')
 
 def process_news(text, url=''):
     scores = sia.polarity_scores(text)
@@ -231,17 +271,25 @@ def process_news(text, url=''):
         label = 'NEGATIVE'
     else:
         label = 'NEUTRAL'
-    mentioned_symbols = list({
+
+    # Company name matching
+    mentioned = {
         symbol for company, symbol in company_to_symbol.items()
         if symbol and company.lower() in text.lower()
-    })
+    }
+    # $TICKER pattern matching — unambiguous in financial text
+    for m in _DOLLAR_TICKER.finditer(text):
+        t = m.group(1)
+        if t in _all_symbols:
+            mentioned.add(t)
+
     preview = text[:160].rstrip() + ('…' if len(text) > 160 else '')
     return {
         'preview': preview,
         'url': url,
         'sentiment': label,
         'score': polarity,
-        'companies': mentioned_symbols,
+        'companies': list(mentioned),
     }
 
 
@@ -267,7 +315,8 @@ def get_stock_prices(symbols):
         return {sym: data for sym, data in ex.map(fetch_price, symbols) if data}
 
 
-def recommend_stocks(news_data, sector=None):
+def _rank_sector(news_data, sector=None):
+    """Pure ranking — no yfinance calls. Fast, pure Python."""
     allowed = sector_to_symbols.get(sector.lower().strip()) if sector else None
     stock_data = {}
     for item in news_data:
@@ -291,8 +340,7 @@ def recommend_stocks(news_data, sector=None):
                     stock_data[symbol]['neg_articles'].append(
                         {'preview': item['preview'], 'url': item['url']}
                     )
-
-    recommendations = sorted(
+    return sorted(
         [
             {
                 'Symbol': sym,
@@ -308,12 +356,40 @@ def recommend_stocks(news_data, sector=None):
         reverse=True,
     )[:50]
 
-    if recommendations:
-        prices = get_stock_prices([r['Symbol'] for r in recommendations])
-        for rec in recommendations:
-            rec['Price'] = prices.get(rec['Symbol'])
 
-    return recommendations
+def _precompute_all_sectors(news_data):
+    """Background thread: rank every sector in parallel, then fetch all prices once."""
+    all_keys = [key for key, _ in TABS]
+
+    # Rank all sectors simultaneously (pure Python, no I/O)
+    sector_recs = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(all_keys)) as ex:
+        futures = {ex.submit(_rank_sector, news_data, key or None): key for key in all_keys}
+        for future in concurrent.futures.as_completed(futures):
+            sector_recs[futures[future]] = future.result()
+
+    # Collect every unique symbol across all sectors
+    all_syms = {rec['Symbol'] for recs in sector_recs.values() for rec in recs}
+
+    # One batched price fetch for all symbols
+    all_prices = get_stock_prices(list(all_syms))
+
+    # Attach prices and write to sector cache
+    now = time.time()
+    for key, recs in sector_recs.items():
+        for rec in recs:
+            rec['Price'] = all_prices.get(rec['Symbol'])
+        _sector_cache[key] = {'recs': recs, 'ts': now}
+
+
+def recommend_stocks(news_data, sector=None):
+    """On-demand fallback used only before the background pre-compute finishes."""
+    recs = _rank_sector(news_data, sector)
+    if recs:
+        prices = get_stock_prices([r['Symbol'] for r in recs])
+        for rec in recs:
+            rec['Price'] = prices.get(rec['Symbol'])
+    return recs
 
 
 TABS = [
@@ -353,7 +429,14 @@ def home():
         custom_sources.append(custom_url)
 
     news_data, cache_ts = get_cached_news()
-    recommendations = recommend_stocks(news_data, sector=sector or None)
+
+    cache_entry = _sector_cache.get(sector)
+    if cache_entry is not None:
+        recommendations = cache_entry['recs']
+    else:
+        # Background pre-compute not finished yet — compute on demand
+        recommendations = recommend_stocks(news_data, sector=sector or None)
+
     cache_age_min = int((time.time() - cache_ts) / 60)
 
     return render_template(
