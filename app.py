@@ -265,27 +265,31 @@ _SP500_SUBSECTOR_MAP = {
 }
 
 
-def _load_sp500():
+def _load_wiki_index(url, label):
+    """Generic loader: fetches a Wikipedia index table and merges tickers/sectors."""
     try:
-        resp = requests.get(
-            'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies',
-            timeout=15, headers=HEADERS
-        )
+        resp = requests.get(url, timeout=15, headers=HEADERS)
         soup = BeautifulSoup(resp.content, 'lxml')
         table = soup.find('table', {'id': 'constituents'})
         if not table:
-            print('S&P 500: table not found on Wikipedia')
+            # fallback: first large wikitable
+            tables = soup.find_all('table', {'class': 'wikitable'})
+            table = next((t for t in tables if len(t.find_all('tr')) > 50), None)
+        if not table:
+            print(f'{label}: table not found')
             return
         count = 0
         for row in table.find_all('tr')[1:]:
             cols = row.find_all('td')
-            if len(cols) < 3:
+            if len(cols) < 2:
                 continue
             ticker = cols[0].get_text(strip=True)
             name   = cols[1].get_text(strip=True)
             gics   = cols[2].get_text(strip=True) if len(cols) > 2 else ''
             sub    = cols[3].get_text(strip=True) if len(cols) > 3 else ''
 
+            if not ticker or not name:
+                continue
             company_to_symbol[name] = ticker
             _all_symbols.add(ticker)
 
@@ -298,12 +302,17 @@ def _load_sp500():
                 if s in sector_to_symbols:
                     sector_to_symbols[s].add(ticker)
             count += 1
-        print(f'S&P 500: loaded {count} components')
+        print(f'{label}: loaded {count} components')
     except Exception as e:
-        print(f'S&P 500 load failed: {e}')
+        print(f'{label} load failed: {e}')
 
 
-_load_sp500()
+_load_wiki_index(
+    'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies', 'S&P 500'
+)
+_load_wiki_index(
+    'https://en.wikipedia.org/wiki/Nasdaq-100', 'NASDAQ-100'
+)
 # ─────────────────────────────────────────────────────────────────────────────
 
 _article_store = {}  # url/preview-key -> processed article (accumulated, never cleared)
