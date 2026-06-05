@@ -457,6 +457,71 @@ def home():
     )
 
 
+@app.route('/search')
+def search():
+    q = request.args.get('q', '').strip()
+    q_upper = q.upper()
+    q_lower = q.lower()
+
+    # Resolve query to a ticker symbol
+    symbol = None
+    if q_upper in _all_symbols:
+        symbol = q_upper
+    else:
+        for company, sym in company_to_symbol.items():
+            if q_lower == company.lower() or q_lower in company.lower():
+                symbol = sym
+                break
+
+    # Ensure news store is populated
+    news_data, cache_ts = get_cached_news()
+    cache_age_min = int((time.time() - cache_ts) / 60)
+
+    search_result = None
+    if symbol:
+        pos_articles, neg_articles = [], []
+        pos_total, pos_count = 0.0, 0
+        for item in _article_store.values():
+            if symbol in item['companies']:
+                if item['score'] >= 0.05:
+                    pos_total += item['score']
+                    pos_count += 1
+                    pos_articles.append({'preview': item['preview'], 'url': item['url']})
+                elif item['score'] <= -0.05:
+                    neg_articles.append({'preview': item['preview'], 'url': item['url']})
+
+        _, price_data = fetch_price(symbol)
+
+        # Find a human-readable name for the symbol
+        company_name = next(
+            (name for name, sym in company_to_symbol.items() if sym == symbol and len(name) > 3),
+            symbol
+        )
+
+        search_result = {
+            'Symbol': symbol,
+            'CompanyName': company_name,
+            'Mentions': pos_count,
+            'AvgSentiment': round(pos_total / pos_count, 3) if pos_count else 0,
+            'Articles': pos_articles,
+            'NegArticles': neg_articles,
+            'Price': price_data,
+        }
+
+    return render_template(
+        'index.html',
+        search_query=q,
+        search_result=search_result,
+        symbol_not_found=(q and symbol is None),
+        tabs=TABS,
+        sector='',
+        recommendations=[],
+        custom_sources=custom_sources,
+        articles_count=len(_article_store),
+        cache_age_min=cache_age_min,
+    )
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 7860))
     app.run(host='0.0.0.0', port=port, debug=False)

@@ -23,9 +23,23 @@
             </div>
             <p class="brand-desc">Surfaces stocks with the strongest positive sentiment from live financial news.</p>
 
+            <!-- Stock search -->
+            <form id="search-form" action="/search" method="GET">
+                <div class="form-group">
+                    <label for="q">Search stock</label>
+                    <div class="search-row">
+                        <input type="text" id="q" name="q"
+                               placeholder="AAPL, Tesla, NVDA…"
+                               value="{{ search_query or '' }}"
+                               autocomplete="off">
+                        <button type="submit" class="btn-search" aria-label="Search">&#9654;</button>
+                    </div>
+                </div>
+            </form>
+
             <form id="refresh-form" action="/" method="GET">
                 <button type="submit" class="btn">
-                    <span class="btn-icon">&#9654;</span> Refresh Analysis
+                    <span class="btn-icon">&#8635;</span> Refresh Analysis
                 </button>
             </form>
 
@@ -80,6 +94,74 @@
                 {% endfor %}
             </nav>
 
+            {% if search_result %}
+            <!-- Search result -->
+            <div class="search-result-card">
+                <div class="sr-header">
+                    <div class="sr-title-group">
+                        <span class="ticker">{{ search_result.Symbol }}</span>
+                        <span class="sr-name">{{ search_result.CompanyName }}</span>
+                    </div>
+                    <div class="sr-price-group">
+                        {% if search_result.Price %}
+                            <span class="price">${{ search_result.Price.price }}</span>
+                            {% if search_result.Price.change_pct is not none %}
+                                <span class="change {% if search_result.Price.change_pct >= 0 %}up{% else %}down{% endif %}">
+                                    {% if search_result.Price.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+                                    {{ "%.2f"|format(search_result.Price.change_pct | abs) }}%
+                                </span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="sr-meta">
+                    <span class="mentions-badge">{{ search_result.Mentions }} positive mention{{ 's' if search_result.Mentions != 1 else '' }}</span>
+                    {% if search_result.Mentions > 0 %}
+                        <span class="sentiment-score">avg sentiment {{ search_result.AvgSentiment }}</span>
+                    {% endif %}
+                </div>
+                {% if search_result.Articles or search_result.NegArticles %}
+                <div class="sr-reasons">
+                    {% if search_result.Articles %}
+                    <div class="reason-group reason-up">
+                        <p class="reason-label">&#9650; Why it may be rising ({{ search_result.Articles | length }} articles)</p>
+                        <ul class="article-list">
+                            {% for art in search_result.Articles %}
+                            <li>
+                                {% if art.url %}<a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
+                                {% else %}{{ art.preview }}{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% if search_result.NegArticles %}
+                    <div class="reason-group reason-down">
+                        <p class="reason-label">&#9660; Why it may be falling ({{ search_result.NegArticles | length }} articles)</p>
+                        <ul class="article-list">
+                            {% for art in search_result.NegArticles %}
+                            <li>
+                                {% if art.url %}<a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
+                                {% else %}{{ art.preview }}{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="sr-no-news">No news mentions found for {{ search_result.Symbol }} in the current article store. Try refreshing or check back later.</p>
+                {% endif %}
+            </div>
+
+            {% elif symbol_not_found %}
+            <div class="empty-state">
+                <div class="empty-icon">&#10067;</div>
+                <p><strong>{{ search_query }}</strong> is not in the tracked stock list.</p>
+                <p class="empty-hint">Try a ticker like AAPL, NVDA, TSLA or a company name like "Tesla".</p>
+            </div>
+
+            {% else %}
             <div class="content-header">
                 <h1>
                     {% if sector %}
@@ -90,7 +172,9 @@
                 </h1>
                 <p class="content-sub">Ranked by positive mention count &times; average VADER sentiment score.</p>
             </div>
+            {% endif %}
 
+            {% if not search_result and not symbol_not_found %}
             {% if recommendations %}
             <div class="results">
                 {% for rec in recommendations %}
@@ -172,6 +256,7 @@
                 <div class="welcome-icon">&#128200;</div>
                 <p>Select a sector tab or hit <strong>Refresh Analysis</strong> to scan live financial feeds.</p>
             </div>
+            {% endif %}
             {% endif %}
 
             <!-- Legal Disclaimer -->
