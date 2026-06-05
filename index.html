@@ -24,8 +24,8 @@
             <p class="brand-desc">Surfaces stocks with the strongest positive sentiment from live financial news.</p>
 
             <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">
-                <span id="theme-icon">🌙</span>
-                <span id="theme-label">Dark mode</span>
+                <span id="theme-icon">☀️</span>
+                <span id="theme-label">Light mode</span>
             </button>
 
             <!-- Stock search -->
@@ -296,29 +296,29 @@
     </div>
 
     <script>
-        // Theme toggle — persists in localStorage
+        // Theme toggle — dark is default; 'light' class activates warm cream
         var root = document.getElementById('html-root');
 
-        function applyTheme(dark) {
-            if (dark) {
-                root.classList.add('dark');
-                document.getElementById('theme-icon').textContent = '☀️';
-                document.getElementById('theme-label').textContent = 'Light mode';
-            } else {
-                root.classList.remove('dark');
+        function applyTheme(light) {
+            if (light) {
+                root.classList.add('light');
                 document.getElementById('theme-icon').textContent = '🌙';
                 document.getElementById('theme-label').textContent = 'Dark mode';
+            } else {
+                root.classList.remove('light');
+                document.getElementById('theme-icon').textContent = '☀️';
+                document.getElementById('theme-label').textContent = 'Light mode';
             }
         }
 
         function toggleTheme() {
-            var isDark = root.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'light' : 'dark');
-            applyTheme(!isDark);
+            var isLight = root.classList.contains('light');
+            localStorage.setItem('theme', isLight ? 'dark' : 'light');
+            applyTheme(!isLight);
         }
 
-        // Apply saved theme immediately (before paint to avoid flicker)
-        applyTheme(localStorage.getItem('theme') === 'dark');
+        // Apply saved theme before first paint to avoid flicker
+        applyTheme(localStorage.getItem('theme') === 'light');
 
         document.querySelectorAll('.tab').forEach(function(tab) {
             tab.addEventListener('click', function() {
