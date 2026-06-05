@@ -114,20 +114,43 @@
                         </div>
                     </div>
 
-                    {% if rec.Articles %}
+                    {% if rec.Articles or rec.NegArticles %}
                     <details class="articles">
-                        <summary>View {{ rec.Articles | length }} source article{{ 's' if rec.Articles | length != 1 else '' }}</summary>
-                        <ul class="article-list">
-                            {% for art in rec.Articles %}
-                            <li>
-                                {% if art.url %}
-                                <a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
-                                {% else %}
-                                {{ art.preview }}
-                                {% endif %}
-                            </li>
-                            {% endfor %}
-                        </ul>
+                        <summary>Why is {{ rec.Symbol }} moving?</summary>
+                        <div class="reasons">
+                            {% if rec.Articles %}
+                            <div class="reason-group reason-up">
+                                <p class="reason-label">&#9650; Why it may be rising</p>
+                                <ul class="article-list">
+                                    {% for art in rec.Articles %}
+                                    <li>
+                                        {% if art.url %}
+                                        <a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
+                                        {% else %}
+                                        {{ art.preview }}
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            {% if rec.NegArticles %}
+                            <div class="reason-group reason-down">
+                                <p class="reason-label">&#9660; Why it may be falling</p>
+                                <ul class="article-list">
+                                    {% for art in rec.NegArticles %}
+                                    <li>
+                                        {% if art.url %}
+                                        <a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
+                                        {% else %}
+                                        {{ art.preview }}
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
                     </details>
                     {% endif %}
                 </div>

@@ -271,31 +271,38 @@ def recommend_stocks(news_data, sector=None):
     allowed = sector_to_symbols.get(sector.lower().strip()) if sector else None
     stock_data = {}
     for item in news_data:
-        if item['score'] < 0.05:
-            continue
         for symbol in item['companies']:
             if allowed and symbol not in allowed:
                 continue
             if symbol not in stock_data:
-                stock_data[symbol] = {'total': 0.0, 'count': 0, 'articles': []}
-            stock_data[symbol]['total'] += item['score']
-            stock_data[symbol]['count'] += 1
-            if len(stock_data[symbol]['articles']) < 3:
-                stock_data[symbol]['articles'].append({
-                    'preview': item['preview'],
-                    'url': item['url'],
-                })
+                stock_data[symbol] = {
+                    'pos_total': 0.0, 'pos_count': 0,
+                    'pos_articles': [], 'neg_articles': [],
+                }
+            if item['score'] >= 0.05:
+                stock_data[symbol]['pos_total'] += item['score']
+                stock_data[symbol]['pos_count'] += 1
+                if len(stock_data[symbol]['pos_articles']) < 3:
+                    stock_data[symbol]['pos_articles'].append(
+                        {'preview': item['preview'], 'url': item['url']}
+                    )
+            elif item['score'] <= -0.05:
+                if len(stock_data[symbol]['neg_articles']) < 3:
+                    stock_data[symbol]['neg_articles'].append(
+                        {'preview': item['preview'], 'url': item['url']}
+                    )
 
     recommendations = sorted(
         [
             {
                 'Symbol': sym,
-                'Mentions': d['count'],
-                'Avg Sentiment': round(d['total'] / d['count'], 3),
-                'Articles': d['articles'],
+                'Mentions': d['pos_count'],
+                'Avg Sentiment': round(d['pos_total'] / d['pos_count'], 3),
+                'Articles': d['pos_articles'],
+                'NegArticles': d['neg_articles'],
                 'Price': None,
             }
-            for sym, d in stock_data.items()
+            for sym, d in stock_data.items() if d['pos_count'] > 0
         ],
         key=lambda x: (x['Mentions'], x['Avg Sentiment']),
         reverse=True,

@@ -273,7 +273,7 @@ body {
     padding: 0.15rem 0.5rem;
 }
 
-/* ── Source articles ── */
+/* ── Source articles / reasons ── */
 .articles {
     border-top: 1px solid var(--border);
 }
@@ -294,9 +294,31 @@ body {
 details[open] summary::before { content: "▼"; }
 .articles summary:hover { color: var(--text); }
 
+.reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.reason-group {
+    padding: 0.6rem 1.25rem 0.85rem;
+}
+.reason-group + .reason-group {
+    border-top: 1px solid var(--border);
+}
+
+.reason-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 0.5rem;
+}
+.reason-up .reason-label { color: var(--green); }
+.reason-down .reason-label { color: var(--red); }
+
 .article-list {
     list-style: none;
-    padding: 0 1.25rem 0.85rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -306,8 +328,10 @@ details[open] summary::before { content: "▼"; }
     color: var(--muted);
     line-height: 1.45;
     padding-left: 0.75rem;
-    border-left: 2px solid var(--border);
 }
+.reason-up .article-list li { border-left: 2px solid var(--green-bg); }
+.reason-down .article-list li { border-left: 2px solid var(--red-bg); }
+
 .article-list a {
     color: var(--text);
     text-decoration: none;
