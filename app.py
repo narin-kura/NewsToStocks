@@ -306,7 +306,7 @@ def recommend_stocks(news_data, sector=None):
         ],
         key=lambda x: (x['Mentions'], x['Avg Sentiment']),
         reverse=True,
-    )[:6]
+    )[:50]
 
     if recommendations:
         prices = get_stock_prices([r['Symbol'] for r in recommendations])
