@@ -95,20 +95,21 @@
                 {% for rec in recommendations %}
                 <div class="stock-card">
                     <div class="card-top">
-                        <div class="ticker-group">
-                            <span class="ticker">{{ rec.Symbol }}</span>
-                            <span class="sentiment-score">score {{ rec["Avg Sentiment"] }}</span>
-                        </div>
-
-                        <div class="price-group">
+                        <div class="card-row1">
+                            <div class="ticker-group">
+                                <span class="ticker">{{ rec.Symbol }}</span>
+                                <span class="sentiment-score">{{ rec["Avg Sentiment"] }}</span>
+                            </div>
                             {% if rec.Price %}
                                 <span class="price">${{ rec.Price.price }}</span>
-                                {% if rec.Price.change_pct is not none %}
-                                    <span class="change {% if rec.Price.change_pct >= 0 %}up{% else %}down{% endif %}">
-                                        {% if rec.Price.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
-                                        {{ "%.2f"|format(rec.Price.change_pct | abs) }}%
-                                    </span>
-                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="card-row2">
+                            {% if rec.Price and rec.Price.change_pct is not none %}
+                                <span class="change {% if rec.Price.change_pct >= 0 %}up{% else %}down{% endif %}">
+                                    {% if rec.Price.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+                                    {{ "%.2f"|format(rec.Price.change_pct | abs) }}%
+                                </span>
                             {% endif %}
                             <span class="mentions-badge">{{ rec.Mentions }} mention{{ 's' if rec.Mentions != 1 else '' }}</span>
                         </div>
