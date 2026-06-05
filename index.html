@@ -3,67 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NewsToStocks — Investment AI Agent</title>
+    <title>NewsToStocks</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>NewsToStocks</h1>
-            <p class="subtitle">Scrapes financial news, runs sentiment analysis, and surfaces the most positively-mentioned stocks.</p>
-        </header>
+    <div id="loader" class="loader hidden">
+        <div class="loader-box">
+            <div class="spinner"></div>
+            <p>Fetching &amp; analysing live news…</p>
+        </div>
+    </div>
 
-        <div class="card">
-            <form action="/" method="POST">
+    <div class="page">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-icon">&#9650;</span>
+                <span class="brand-name">NewsToStocks</span>
+            </div>
+            <p class="brand-desc">Surfaces stocks with the strongest positive sentiment from live financial news.</p>
+
+            <form id="main-form" action="/" method="POST">
                 <div class="form-group">
-                    <label for="sector">Filter by Sector</label>
+                    <label for="sector">Sector filter</label>
                     <input type="text" id="sector" name="sector"
-                           placeholder="e.g. tech, finance, energy, healthcare"
+                           placeholder="tech, finance, energy…"
                            value="{{ sector or '' }}">
+                    <span class="hint">Leave blank for all sectors</span>
                 </div>
 
                 <div class="form-group">
-                    <label for="custom_url">Add Custom RSS Feed</label>
+                    <label for="custom_url">Custom RSS feed</label>
                     <input type="text" id="custom_url" name="custom_url"
                            placeholder="https://example.com/rss">
                 </div>
 
-                <button type="submit" class="btn">Analyse News</button>
+                <button type="submit" class="btn">
+                    <span class="btn-icon">&#9654;</span> Analyse News
+                </button>
             </form>
-        </div>
 
-        {% if articles_count is defined %}
-        <p class="meta">Analysed <strong>{{ articles_count }}</strong> articles from live feeds.</p>
-        {% endif %}
-
-        <h2>Top Investment Suggestions</h2>
-
-        {% if recommendations %}
-        <div class="results">
-            {% for rec in recommendations %}
-            <div class="stock-card">
-                <div class="ticker">{{ rec.Symbol }}</div>
-                <div class="stats">
-                    <span class="badge positive">&#9650; {{ rec["Avg Sentiment"] }}</span>
-                    <span class="mentions">{{ rec.Mentions }} mention{{ 's' if rec.Mentions != 1 else '' }}</span>
+            {% if articles_count is defined %}
+            <div class="meta-box">
+                <div class="meta-row">
+                    <span class="meta-label">Articles scanned</span>
+                    <span class="meta-val">{{ articles_count }}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Cache age</span>
+                    <span class="meta-val">{{ cache_age_min }}m ago</span>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% elif articles_count is defined %}
-        <p class="empty">No strong positive signals found for {% if sector %}<em>{{ sector }}</em>{% else %}the current news cycle{% endif %}. Try a different sector or check back later.</p>
-        {% endif %}
+            {% endif %}
 
-        {% if custom_sources %}
-        <div class="custom-sources">
-            <h3>Custom Sources</h3>
-            <ul>
-                {% for source in custom_sources %}
-                <li><a href="{{ source }}" target="_blank" rel="noopener">{{ source }}</a></li>
+            {% if custom_sources %}
+            <div class="custom-section">
+                <p class="section-label">Custom sources</p>
+                <ul class="source-list">
+                    {% for source in custom_sources %}
+                    <li><a href="{{ source }}" target="_blank" rel="noopener">{{ source }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="sectors-hint">
+                <p class="section-label">Available sectors</p>
+                <div class="sector-tags">
+                    {% for s in ['tech','finance','energy','healthcare','pharma','semiconductor','automotive','ev','media','industrial','cybersecurity','cloud','crypto'] %}
+                    <span class="sector-tag">{{ s }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="content">
+            <div class="content-header">
+                <h1>
+                    {% if sector %}
+                        {{ sector | capitalize }} picks
+                    {% else %}
+                        Top picks today
+                    {% endif %}
+                </h1>
+                <p class="content-sub">Ranked by positive mention count &times; average VADER sentiment score.</p>
+            </div>
+
+            {% if recommendations %}
+            <div class="results">
+                {% for rec in recommendations %}
+                <div class="stock-card">
+                    <div class="card-top">
+                        <div class="ticker-group">
+                            <span class="ticker">{{ rec.Symbol }}</span>
+                            <span class="sentiment-score">score {{ rec["Avg Sentiment"] }}</span>
+                        </div>
+
+                        <div class="price-group">
+                            {% if rec.Price %}
+                                <span class="price">${{ rec.Price.price }}</span>
+                                {% if rec.Price.change_pct is not none %}
+                                    <span class="change {% if rec.Price.change_pct >= 0 %}up{% else %}down{% endif %}">
+                                        {% if rec.Price.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+                                        {{ "%.2f"|format(rec.Price.change_pct | abs) }}%
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                            <span class="mentions-badge">{{ rec.Mentions }} mention{{ 's' if rec.Mentions != 1 else '' }}</span>
+                        </div>
+                    </div>
+
+                    {% if rec.Articles %}
+                    <details class="articles">
+                        <summary>View {{ rec.Articles | length }} source article{{ 's' if rec.Articles | length != 1 else '' }}</summary>
+                        <ul class="article-list">
+                            {% for art in rec.Articles %}
+                            <li>
+                                {% if art.url %}
+                                <a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
+                                {% else %}
+                                {{ art.preview }}
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                    {% endif %}
+                </div>
                 {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
+            </div>
+
+            {% elif articles_count is defined %}
+            <div class="empty-state">
+                <div class="empty-icon">&#128269;</div>
+                <p>No strong positive signals found
+                {% if sector %}for <strong>{{ sector }}</strong>{% endif %}
+                in the current news cycle.</p>
+                <p class="empty-hint">Try a different sector or check back in a few minutes.</p>
+            </div>
+            {% else %}
+            <div class="welcome">
+                <div class="welcome-icon">&#128200;</div>
+                <p>Hit <strong>Analyse News</strong> to scan live financial feeds and surface the most positively-mentioned stocks right now.</p>
+            </div>
+            {% endif %}
+
+            <!-- Legal Disclaimer -->
+            <div class="disclaimer">
+                <strong>&#9888; Legal Disclaimer</strong>
+                This tool is for <strong>educational purposes only</strong>. It does not constitute financial, investment, or legal advice. The sentiment scores and stock mentions shown here are derived from automated analysis of publicly available news and should not be used as the basis for any trading or investment decision. Past sentiment signals are not indicative of future stock performance. The creators of NewsToStocks accept no liability for any financial losses or decisions made based on this tool. Always consult a licensed financial advisor before making investment decisions.
+            </div>
+        </main>
     </div>
+
+    <script>
+        document.getElementById('main-form').addEventListener('submit', function () {
+            document.getElementById('loader').classList.remove('hidden');
+        });
+    </script>
 </body>
 </html>

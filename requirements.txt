@@ -2,6 +2,6 @@ flask
 gunicorn
 beautifulsoup4
 lxml
-textblob
 nltk
+yfinance
 requests
