@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NewsToStocks</title>
+    <title>NewsToStocks{% if sector %} — {{ sector | capitalize }}{% endif %}</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -23,24 +23,20 @@
             </div>
             <p class="brand-desc">Surfaces stocks with the strongest positive sentiment from live financial news.</p>
 
-            <form id="main-form" action="/" method="POST">
-                <div class="form-group">
-                    <label for="sector">Sector filter</label>
-                    <input type="text" id="sector" name="sector"
-                           placeholder="tech, finance, energy…"
-                           value="{{ sector or '' }}">
-                    <span class="hint">Leave blank for all sectors</span>
-                </div>
+            <form id="refresh-form" action="/" method="GET">
+                <button type="submit" class="btn">
+                    <span class="btn-icon">&#9654;</span> Refresh Analysis
+                </button>
+            </form>
 
+            <form id="rss-form" action="/" method="POST">
+                <input type="hidden" name="sector" value="{{ sector or '' }}">
                 <div class="form-group">
                     <label for="custom_url">Custom RSS feed</label>
                     <input type="text" id="custom_url" name="custom_url"
                            placeholder="https://example.com/rss">
                 </div>
-
-                <button type="submit" class="btn">
-                    <span class="btn-icon">&#9654;</span> Analyse News
-                </button>
+                <button type="submit" class="btn btn-secondary">Add Feed</button>
             </form>
 
             {% if articles_count is defined %}
@@ -52,6 +48,10 @@
                 <div class="meta-row">
                     <span class="meta-label">Cache age</span>
                     <span class="meta-val">{{ cache_age_min }}m ago</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Showing</span>
+                    <span class="meta-val">{{ recommendations | length }} stocks</span>
                 </div>
             </div>
             {% endif %}
@@ -66,23 +66,24 @@
                 </ul>
             </div>
             {% endif %}
-
-            <div class="sectors-hint">
-                <p class="section-label">Available sectors</p>
-                <div class="sector-tags">
-                    {% for s in ['tech','ai','hardware','cloud','cybersecurity','semiconductor','biotech','genomics','space','defense','finance','crypto','energy','renewable','solar','healthcare','pharma','automotive','ev','gaming','media','telecom','retail','ecommerce','travel','airline','hospitality','industrial','food','reit'] %}
-                    <span class="sector-tag">{{ s }}</span>
-                    {% endfor %}
-                </div>
-            </div>
         </aside>
 
         <!-- Main content -->
         <main class="content">
+            <!-- Tab bar -->
+            <nav class="tabs" aria-label="Sector tabs">
+                {% for key, label in tabs %}
+                <a href="{{ '/?sector=' + key if key else '/' }}"
+                   class="tab {% if sector == key %}active{% endif %}">
+                    {{ label }}
+                </a>
+                {% endfor %}
+            </nav>
+
             <div class="content-header">
                 <h1>
                     {% if sector %}
-                        {{ sector | capitalize }} picks
+                        {% for key, label in tabs if key == sector %}{{ label }}{% endfor %} picks
                     {% else %}
                         Top picks today
                     {% endif %}
@@ -164,12 +165,12 @@
                 <p>No strong positive signals found
                 {% if sector %}for <strong>{{ sector }}</strong>{% endif %}
                 in the current news cycle.</p>
-                <p class="empty-hint">Try a different sector or check back in a few minutes.</p>
+                <p class="empty-hint">Try a different sector tab or check back in a few minutes.</p>
             </div>
             {% else %}
             <div class="welcome">
                 <div class="welcome-icon">&#128200;</div>
-                <p>Hit <strong>Analyse News</strong> to scan live financial feeds and surface the most positively-mentioned stocks right now.</p>
+                <p>Select a sector tab or hit <strong>Refresh Analysis</strong> to scan live financial feeds.</p>
             </div>
             {% endif %}
 
@@ -182,7 +183,12 @@
     </div>
 
     <script>
-        document.getElementById('main-form').addEventListener('submit', function () {
+        document.querySelectorAll('.tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.getElementById('loader').classList.remove('hidden');
+            });
+        });
+        document.getElementById('refresh-form').addEventListener('submit', function() {
             document.getElementById('loader').classList.remove('hidden');
         });
     </script>

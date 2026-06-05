@@ -135,6 +135,12 @@ body {
     margin-top: 0.25rem;
 }
 .btn:hover { background: var(--accent-hover); }
+.btn-secondary {
+    background: var(--bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--border); color: var(--text); }
 .btn-icon { font-size: 0.7rem; }
 
 /* ── Meta box ── */
@@ -190,14 +196,49 @@ body {
 /* ── Main content ── */
 .content {
     flex: 1;
-    padding: 2rem 2.5rem;
+    padding: 1.5rem 2rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1rem;
+    min-width: 0;
+}
+
+/* ── Tab bar ── */
+.tabs {
+    display: flex;
+    gap: 0.3rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+    flex-shrink: 0;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.tab:hover {
+    background: var(--border);
+    color: var(--text);
+}
+.tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
 }
 
 .content-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: -0.5px;
     color: var(--text);
@@ -205,7 +246,7 @@ body {
 .content-sub {
     font-size: 0.82rem;
     color: var(--muted);
-    margin-top: 0.3rem;
+    margin-top: 0.25rem;
 }
 
 /* ── Results grid ── */
@@ -392,6 +433,8 @@ details[open] summary::before { content: "▼"; }
         border-right: none;
         border-bottom: 1px solid var(--border);
     }
-    .content { padding: 1.25rem 1rem; }
+    .content { padding: 1rem; }
     .results { grid-template-columns: 1fr 1fr; }
+    .tabs { gap: 0.25rem; }
+    .tab { font-size: 0.72rem; padding: 0.3rem 0.6rem; }
 }

@@ -316,9 +316,38 @@ def recommend_stocks(news_data, sector=None):
     return recommendations
 
 
+TABS = [
+    ('',              'All'),
+    ('tech',          'Tech'),
+    ('ai',            'AI'),
+    ('hardware',      'Hardware'),
+    ('semiconductor', 'Chips'),
+    ('cloud',         'Cloud'),
+    ('cybersecurity', 'Cyber'),
+    ('finance',       'Finance'),
+    ('crypto',        'Crypto'),
+    ('healthcare',    'Healthcare'),
+    ('biotech',       'Biotech'),
+    ('pharma',        'Pharma'),
+    ('space',         'Space'),
+    ('defense',       'Defense'),
+    ('energy',        'Energy'),
+    ('renewable',     'Clean Energy'),
+    ('automotive',    'Auto / EV'),
+    ('gaming',        'Gaming'),
+    ('media',         'Media'),
+    ('telecom',       'Telecom'),
+    ('retail',        'Retail'),
+    ('travel',        'Travel'),
+    ('industrial',    'Industrial'),
+    ('food',          'Food'),
+    ('reit',          'REIT'),
+]
+
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    sector = request.form.get('sector', '').strip()
+    sector = (request.args.get('sector') or request.form.get('sector', '')).strip()
     custom_url = request.form.get('custom_url', '').strip()
     if custom_url and custom_url not in custom_sources:
         custom_sources.append(custom_url)
@@ -331,6 +360,7 @@ def home():
         'index.html',
         recommendations=recommendations,
         sector=sector,
+        tabs=TABS,
         custom_sources=custom_sources,
         articles_count=len(news_data),
         cache_age_min=cache_age_min,
