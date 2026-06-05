@@ -3,37 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Investment AI</title>
+    <title>NewsToStocks — Investment AI Agent</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h1>Investment Recommendations</h1>
+    <div class="container">
+        <header>
+            <h1>NewsToStocks</h1>
+            <p class="subtitle">Scrapes financial news, runs sentiment analysis, and surfaces the most positively-mentioned stocks.</p>
+        </header>
 
-    <form action="/" method="POST">
-        <label for="sector">Enter Sector (optional):</label>
-        <input type="text" id="sector" name="sector" placeholder="e.g., tech, finance">
-        
-        <br><br>
-        
-        <label for="custom_url">Add a Custom News Website:</label>
-        <input type="text" id="custom_url" name="custom_url" placeholder="https://example.com">
-        
-        <br><br>
-        
-        <button type="submit">Get Recommendations</button>
-    </form>
+        <div class="card">
+            <form action="/" method="POST">
+                <div class="form-group">
+                    <label for="sector">Filter by Sector</label>
+                    <input type="text" id="sector" name="sector"
+                           placeholder="e.g. tech, finance, energy, healthcare"
+                           value="{{ sector or '' }}">
+                </div>
 
-    <h2>Top Investment Suggestions</h2>
-    <ul>
-        {% for rec in recommendations %}
-            <li><strong>{{ rec.Symbol }}</strong> - Correlation: {{ rec.Correlation|round(2) }} - Sentiment: {{ rec["Avg Sentiment"]|round(2) }}</li>
-        {% endfor %}
-    </ul>
+                <div class="form-group">
+                    <label for="custom_url">Add Custom RSS Feed</label>
+                    <input type="text" id="custom_url" name="custom_url"
+                           placeholder="https://example.com/rss">
+                </div>
 
-    <h3>Custom News Sources</h3>
-    <ul>
-        {% for source in custom_sources %}
-            <li>{{ source }}</li>
-        {% endfor %}
-    </ul>
+                <button type="submit" class="btn">Analyse News</button>
+            </form>
+        </div>
+
+        {% if articles_count is defined %}
+        <p class="meta">Analysed <strong>{{ articles_count }}</strong> articles from live feeds.</p>
+        {% endif %}
+
+        <h2>Top Investment Suggestions</h2>
+
+        {% if recommendations %}
+        <div class="results">
+            {% for rec in recommendations %}
+            <div class="stock-card">
+                <div class="ticker">{{ rec.Symbol }}</div>
+                <div class="stats">
+                    <span class="badge positive">&#9650; {{ rec["Avg Sentiment"] }}</span>
+                    <span class="mentions">{{ rec.Mentions }} mention{{ 's' if rec.Mentions != 1 else '' }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% elif articles_count is defined %}
+        <p class="empty">No strong positive signals found for {% if sector %}<em>{{ sector }}</em>{% else %}the current news cycle{% endif %}. Try a different sector or check back later.</p>
+        {% endif %}
+
+        {% if custom_sources %}
+        <div class="custom-sources">
+            <h3>Custom Sources</h3>
+            <ul>
+                {% for source in custom_sources %}
+                <li><a href="{{ source }}" target="_blank" rel="noopener">{{ source }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
 </body>
 </html>

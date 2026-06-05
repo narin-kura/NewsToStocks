@@ -1,28 +1,188 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
-	padding: 2rem;
-	font-family: -apple-system, BlinkMacSystemFont, "Arial", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    background: #f5f7fa;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+}
+
+.container {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+header {
+    margin-bottom: 2rem;
 }
 
 h1 {
-	font-size: 16px;
-	margin-top: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #0f172a;
 }
 
-p {
-	color: rgb(107, 114, 128);
-	font-size: 15px;
-	margin-bottom: 10px;
-	margin-top: 5px;
+.subtitle {
+    margin-top: 0.4rem;
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.5;
 }
 
+h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.8rem 0 1rem;
+    color: #0f172a;
+}
+
+h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+    color: #475569;
+}
+
+/* Form card */
 .card {
-	max-width: 620px;
-	margin: 0 auto;
-	padding: 16px;
-	border: 1px solid lightgray;
-	border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
 }
 
-.card p:last-child {
-	margin-bottom: 0;
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.35rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #111827;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.form-group input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.6rem 1.4rem;
+    background: #6366f1;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 0.5rem;
+}
+
+.btn:hover {
+    background: #4f46e5;
+}
+
+/* Meta line */
+.meta {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+/* Results */
+.results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.stock-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.ticker {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+    min-width: 60px;
+}
+
+.stats {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+}
+
+.badge.positive {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.mentions {
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+.empty {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Custom sources */
+.custom-sources ul {
+    list-style: none;
+    padding: 0;
+}
+
+.custom-sources li {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+}
+
+.custom-sources a {
+    color: #6366f1;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.custom-sources a:hover {
+    text-decoration: underline;
 }

@@ -1,17 +1,15 @@
-# Use an official lightweight Python image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the current directory contents into the container
-COPY . .
-
-# Install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the required port
+# Download TextBlob / NLTK corpora needed for sentiment analysis
+RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('averaged_perceptron_tagger')"
+
+COPY . .
+
 EXPOSE 7860
 
-# Command to run the application
-CMD ["python", "app.py"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:7860", "--workers", "2", "--timeout", "120"]

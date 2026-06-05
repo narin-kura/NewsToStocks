@@ -1,9 +1,7 @@
 flask
 gunicorn
 beautifulsoup4
-pandas
-numpy
+lxml
 textblob
-yfinance
+nltk
 requests
-
