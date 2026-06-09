@@ -494,6 +494,20 @@ details[open] summary::before { content: "▼"; }
 .reason-down .article-list li { border-left: 2px solid var(--red-bg); }
 .article-list a { color: var(--text); text-decoration: none; }
 .article-list a:hover { color: var(--accent); text-decoration: underline; }
+.src-tag {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.05rem 0.35rem;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+}
 
 /* ── Empty / Welcome states ── */
 .empty-state, .welcome {

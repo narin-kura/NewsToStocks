@@ -156,6 +156,7 @@
                         <ul class="article-list">
                             {% for art in search_result.Articles %}
                             <li>
+                                {% if art.source %}<span class="src-tag">{{ art.source }}</span>{% endif %}
                                 {% if art.url %}<a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
                                 {% else %}{{ art.preview }}{% endif %}
                             </li>
@@ -169,6 +170,7 @@
                         <ul class="article-list">
                             {% for art in search_result.NegArticles %}
                             <li>
+                                {% if art.source %}<span class="src-tag">{{ art.source }}</span>{% endif %}
                                 {% if art.url %}<a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
                                 {% else %}{{ art.preview }}{% endif %}
                             </li>
@@ -238,6 +240,7 @@
                                 <ul class="article-list">
                                     {% for art in rec.Articles %}
                                     <li>
+                                        {% if art.source %}<span class="src-tag">{{ art.source }}</span>{% endif %}
                                         {% if art.url %}
                                         <a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
                                         {% else %}
@@ -254,6 +257,7 @@
                                 <ul class="article-list">
                                     {% for art in rec.NegArticles %}
                                     <li>
+                                        {% if art.source %}<span class="src-tag">{{ art.source }}</span>{% endif %}
                                         {% if art.url %}
                                         <a href="{{ art.url }}" target="_blank" rel="noopener">{{ art.preview }}</a>
                                         {% else %}
@@ -291,6 +295,9 @@
             <div class="disclaimer">
                 <strong>&#9888; Legal Disclaimer</strong>
                 This tool is for <strong>educational purposes only</strong>. It does not constitute financial, investment, or legal advice. The sentiment scores and stock mentions shown here are derived from automated analysis of publicly available news and should not be used as the basis for any trading or investment decision. Past sentiment signals are not indicative of future stock performance. The creators of NewsToStocks accept no liability for any financial losses or decisions made based on this tool. Always consult a licensed financial advisor before making investment decisions.
+                <br/><br/>
+                <strong>&#128240; Data sources</strong>
+                Stock prices via <a href="https://finance.yahoo.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Yahoo Finance</a>. News headlines from Reuters, Yahoo Finance, MarketWatch, CNBC, The Wall Street Journal, TechCrunch, Fortune, Business Insider, Investing.com, Nasdaq, CNN Business, and Reddit — each headline links to its original article, with the source publication tagged alongside it.
             </div>
         </main>
     </div>

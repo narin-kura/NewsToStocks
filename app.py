@@ -7,6 +7,7 @@ import time
 import threading
 import requests
 import concurrent.futures
+from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import yfinance as yf
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -208,6 +209,41 @@ _all_symbols = set(company_to_symbol.values())
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; NewsToStocks/1.0)'}
 
+# Map article URLs to a human-readable publication name, shown as a source
+# attribution badge next to every headline in the UI.
+_SOURCE_NAMES = {
+    'reuters.com': 'Reuters',
+    'yahoo.com': 'Yahoo Finance',
+    'cnn.com': 'CNN Business',
+    'marketwatch.com': 'MarketWatch',
+    'dj.com': 'The Wall Street Journal',
+    'wsj.com': 'The Wall Street Journal',
+    'cnbc.com': 'CNBC',
+    'techcrunch.com': 'TechCrunch',
+    'fortune.com': 'Fortune',
+    'businessinsider.com': 'Business Insider',
+    'investing.com': 'Investing.com',
+    'nasdaq.com': 'Nasdaq',
+    'reddit.com': 'Reddit',
+}
+
+
+def _source_name(url):
+    try:
+        netloc = urlparse(url).netloc.lower()
+        if netloc.startswith('www.'):
+            netloc = netloc[4:]
+        if netloc in _SOURCE_NAMES:
+            return _SOURCE_NAMES[netloc]
+        parts = netloc.split('.')
+        if len(parts) >= 2:
+            base = '.'.join(parts[-2:])
+            if base in _SOURCE_NAMES:
+                return _SOURCE_NAMES[base]
+        return netloc or 'Unknown source'
+    except Exception:
+        return 'Unknown source'
+
 # ── S&P 500 auto-loader ───────────────────────────────────────────────────────
 _SP500_SECTOR_MAP = {
     'Information Technology': ['tech'],
@@ -407,6 +443,7 @@ def process_news(text, url=''):
     return {
         'preview': preview,
         'url': url,
+        'source': _source_name(url),
         'sentiment': label,
         'score': polarity,
         'companies': list(mentioned),
@@ -453,12 +490,12 @@ def _rank_sector(news_data, sector=None):
                 stock_data[symbol]['pos_count'] += 1
                 if len(stock_data[symbol]['pos_articles']) < 3:
                     stock_data[symbol]['pos_articles'].append(
-                        {'preview': item['preview'], 'url': item['url']}
+                        {'preview': item['preview'], 'url': item['url'], 'source': item.get('source')}
                     )
             elif item['score'] <= -0.05:
                 if len(stock_data[symbol]['neg_articles']) < 3:
                     stock_data[symbol]['neg_articles'].append(
-                        {'preview': item['preview'], 'url': item['url']}
+                        {'preview': item['preview'], 'url': item['url'], 'source': item.get('source')}
                     )
     return sorted(
         [
@@ -633,9 +670,9 @@ def search():
                 if item['score'] >= 0.05:
                     pos_total += item['score']
                     pos_count += 1
-                    pos_articles.append({'preview': item['preview'], 'url': item['url']})
+                    pos_articles.append({'preview': item['preview'], 'url': item['url'], 'source': item.get('source')})
                 elif item['score'] <= -0.05:
-                    neg_articles.append({'preview': item['preview'], 'url': item['url']})
+                    neg_articles.append({'preview': item['preview'], 'url': item['url'], 'source': item.get('source')})
 
         _, price_data = fetch_price(symbol)
 
