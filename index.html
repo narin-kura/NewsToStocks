@@ -89,6 +89,41 @@
 
         <!-- Main content -->
         <main class="content">
+            <!-- Site intro / quick tour -->
+            <details class="site-intro" id="site-intro">
+                <summary>&#128075; New here? A quick tour of the page</summary>
+                <div class="intro-grid">
+                    <div class="intro-item">
+                        <span class="intro-emo">&#128194;</span>
+                        <div>
+                            <strong>Sector tabs</strong>
+                            <p>Filter the analysis to a single sector, or stay on the first tab for the full market scan.</p>
+                        </div>
+                    </div>
+                    <div class="intro-item">
+                        <span class="intro-emo">&#128200;</span>
+                        <div>
+                            <strong>Stock cards</strong>
+                            <p>Stocks ranked by positive mentions &times; average sentiment. Open <em>"Why is it moving?"</em> on any card to read the exact headlines behind the score — each one links to its original article.</p>
+                        </div>
+                    </div>
+                    <div class="intro-item">
+                        <span class="intro-emo">&#128269;</span>
+                        <div>
+                            <strong>Search a stock</strong>
+                            <p>Use the sidebar search to look up any tracked ticker or company name and see its bullish and bearish headlines side by side.</p>
+                        </div>
+                    </div>
+                    <div class="intro-item">
+                        <span class="intro-emo">&#128225;</span>
+                        <div>
+                            <strong>Refresh &amp; custom feeds</strong>
+                            <p>Hit <em>Refresh Analysis</em> to re-scan the latest news, or add your own RSS feed in the sidebar to include it in the scan.</p>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
             <!-- Tab bar -->
             <nav class="tabs" aria-label="Sector tabs">
                 {% for key, label in tabs %}
@@ -326,6 +361,13 @@
 
         // Apply saved theme before first paint to avoid flicker
         applyTheme(localStorage.getItem('theme') === 'light');
+
+        // Site intro — expanded on first visit, collapsed once seen
+        var intro = document.getElementById('site-intro');
+        if (localStorage.getItem('introSeen') !== '1') {
+            intro.open = true;
+            localStorage.setItem('introSeen', '1');
+        }
 
         document.querySelectorAll('.tab').forEach(function(tab) {
             tab.addEventListener('click', function() {
