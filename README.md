@@ -6,7 +6,8 @@ pinned: true
 ---
 # Investment Recommendation AI Agent
 
-[![Live App](https://img.shields.io/badge/Live%20App-Hugging%20Face-green?style=flat-square&logo=huggingface)](https://knnarin-newstostocks.hf.space)
+[![Hugging Face](https://img.shields.io/badge/Live%20App-Hugging%20Face-green?style=flat-square&logo=huggingface)](https://knnarin-newstostocks.hf.space)
+[![Google Cloud Run](https://img.shields.io/badge/Live%20App-GCP%20Cloud%20Run-green?style=flat-square&logo=google-cloud)](https://newstostocks-h5axc6napq-uc.a.run.app/)
 
 This AI agent scrapes financial news, analyzes sentiment, and recommends stocks based on correlations.
 
