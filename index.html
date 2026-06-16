@@ -28,6 +28,8 @@
                 <span id="theme-label">Light mode</span>
             </button>
 
+            <div id="account-area"></div>
+
             <!-- Stock search -->
             <form id="search-form" action="/search" method="GET">
                 <div class="form-group">
@@ -56,6 +58,7 @@
                            placeholder="https://example.com/rss">
                 </div>
                 <button type="submit" class="btn btn-secondary">Add Feed</button>
+                <button type="button" id="save-feed-btn" class="btn btn-secondary" onclick="saveCurrentSource()" style="display:none">💾 Save to account</button>
             </form>
 
             {% if articles_count is defined %}
@@ -85,6 +88,11 @@
                 </ul>
             </div>
             {% endif %}
+
+            <div class="custom-section" id="saved-sources-section" style="display:none">
+                <p class="section-label">My saved feeds</p>
+                <ul class="source-list" id="saved-sources-list"></ul>
+            </div>
         </aside>
 
         <!-- Main content -->
@@ -182,6 +190,7 @@
                     {% if search_result.Mentions > 0 %}
                         <span class="sentiment-score">avg sentiment {{ search_result.AvgSentiment }}</span>
                     {% endif %}
+                    <button class="watch-btn" data-symbol="{{ search_result.Symbol }}" onclick="toggleWatch('{{ search_result.Symbol }}', this)" title="Add to watchlist" style="margin-left:auto">☆</button>
                 </div>
                 {% if search_result.Articles or search_result.NegArticles %}
                 <div class="sr-reasons">
@@ -262,6 +271,7 @@
                                 </span>
                             {% endif %}
                             <span class="mentions-badge">{{ rec.Mentions }} mention{{ 's' if rec.Mentions != 1 else '' }}</span>
+                            <button class="watch-btn" data-symbol="{{ rec.Symbol }}" onclick="toggleWatch('{{ rec.Symbol }}', this)" title="Add to watchlist">☆</button>
                         </div>
                     </div>
 
@@ -377,7 +387,243 @@
         document.getElementById('refresh-form').addEventListener('submit', function() {
             document.getElementById('loader').classList.remove('hidden');
         });
+
+        // ── Auth ─────────────────────────────────────────────────────────────
+        var supa = null, session = null, authEnabled = false, authMode = 'signin';
+        var watchedSymbols = new Set();
+
+        async function initAuth() {
+            try {
+                var cfg = await fetch('/api/config').then(function(r) { return r.json(); });
+                authEnabled = !!cfg.auth_enabled;
+                if (!authEnabled) { renderAccountUI(); return; }
+                var mod = await import('https://esm.sh/@supabase/supabase-js@2');
+                supa = mod.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+                var sd = await supa.auth.getSession();
+                session = sd.data.session;
+                await onSessionChange();
+                supa.auth.onAuthStateChange(async function(_event, sess) {
+                    var wasLoggedIn = !!session;
+                    session = sess;
+                    await onSessionChange();
+                    if (session && !wasLoggedIn) closeAuthModal();
+                });
+            } catch(e) {
+                authEnabled = false;
+                renderAccountUI();
+            }
+        }
+
+        async function onSessionChange() {
+            renderAccountUI();
+            await loadWatchlist();
+            syncWatchButtons();
+            await loadUserSources();
+            var btn = document.getElementById('save-feed-btn');
+            if (btn) btn.style.display = session ? '' : 'none';
+        }
+
+        function authHeaders() {
+            return session ? { 'Authorization': 'Bearer ' + session.access_token } : {};
+        }
+
+        function renderAccountUI() {
+            var area = document.getElementById('account-area');
+            if (!area) return;
+            if (!authEnabled) { area.innerHTML = ''; return; }
+            if (!session) {
+                area.innerHTML = '<button class="signin-link" onclick="openAuthModal(\'signin\')">Sign in</button>';
+                return;
+            }
+            var email = (session.user && session.user.email) ? session.user.email : '';
+            var initial = email ? email[0].toUpperCase() : '?';
+            area.innerHTML =
+                '<div class="account-combo" id="account-combo">' +
+                    '<button class="account-trigger" onclick="toggleAccountDrop(event)">' +
+                        '<span class="account-avatar">' + initial + '</span>' +
+                        '<span class="account-email">' + email + '</span>' +
+                        '<span>▾</span>' +
+                    '</button>' +
+                    '<div class="account-drop" id="account-drop" style="display:none">' +
+                        '<div class="ad-item ad-label">' + email + '</div>' +
+                        '<button class="ad-item" onclick="signOut()">Sign out</button>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        function toggleAccountDrop(e) {
+            e.stopPropagation();
+            var drop = document.getElementById('account-drop');
+            drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
+        }
+
+        document.addEventListener('click', function() {
+            var drop = document.getElementById('account-drop');
+            if (drop) drop.style.display = 'none';
+        });
+
+        function openAuthModal(mode) {
+            authMode = mode || 'signin';
+            switchAuthTab(authMode);
+            document.getElementById('auth-modal').classList.add('open');
+            document.getElementById('auth-msg').textContent = '';
+        }
+
+        function closeAuthModal(e) {
+            if (e && e.target !== e.currentTarget) return;
+            document.getElementById('auth-modal').classList.remove('open');
+        }
+
+        function switchAuthTab(mode) {
+            authMode = mode;
+            document.getElementById('auth-tab-signin').classList.toggle('on', mode === 'signin');
+            document.getElementById('auth-tab-signup').classList.toggle('on', mode === 'signup');
+            document.getElementById('auth-modal-title').textContent = mode === 'signin' ? 'Welcome back' : 'Create account';
+            document.getElementById('auth-submit').textContent = mode === 'signin' ? 'Sign in' : 'Create account';
+            var pw = document.getElementById('auth-password');
+            if (pw) pw.setAttribute('autocomplete', mode === 'signin' ? 'current-password' : 'new-password');
+        }
+
+        async function submitAuthForm() {
+            var email = document.getElementById('auth-email').value.trim();
+            var password = document.getElementById('auth-password').value;
+            var msg = document.getElementById('auth-msg');
+            msg.className = ''; msg.textContent = '';
+            if (!email || !password) { msg.className = 'auth-error'; msg.textContent = 'Email and password required.'; return; }
+            document.getElementById('auth-submit').disabled = true;
+            try {
+                var result = authMode === 'signin'
+                    ? await supa.auth.signInWithPassword({ email: email, password: password })
+                    : await supa.auth.signUp({ email: email, password: password });
+                if (result.error) {
+                    msg.className = 'auth-error'; msg.textContent = result.error.message;
+                } else if (authMode === 'signup' && !result.data.session) {
+                    msg.className = 'auth-ok'; msg.textContent = 'Check your email to confirm your account.';
+                }
+            } catch(e) {
+                msg.className = 'auth-error'; msg.textContent = 'Something went wrong. Try again.';
+            }
+            document.getElementById('auth-submit').disabled = false;
+        }
+
+        async function signInWithGoogle() {
+            await supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+        }
+
+        async function signOut() {
+            await supa.auth.signOut();
+            watchedSymbols = new Set();
+            syncWatchButtons();
+        }
+
+        // ── Watchlist ─────────────────────────────────────────────────────────
+        async function loadWatchlist() {
+            watchedSymbols = new Set();
+            if (!session || !authEnabled) return;
+            try {
+                var r = await fetch('/api/watchlist', { headers: authHeaders() });
+                if (r.ok) { var d = await r.json(); watchedSymbols = new Set(d.watchlist || []); }
+            } catch(e) {}
+        }
+
+        function syncWatchButtons() {
+            document.querySelectorAll('.watch-btn').forEach(function(btn) {
+                var sym = btn.dataset.symbol;
+                var on = watchedSymbols.has(sym);
+                btn.textContent = on ? '★' : '☆';
+                btn.classList.toggle('on', on);
+                btn.title = on ? 'Remove from watchlist' : 'Add to watchlist';
+            });
+        }
+
+        async function toggleWatch(symbol, el) {
+            if (!session) { openAuthModal('signin'); return; }
+            var isOn = watchedSymbols.has(symbol);
+            if (isOn) {
+                watchedSymbols.delete(symbol);
+                el.textContent = '☆'; el.classList.remove('on');
+                await fetch('/api/watchlist/' + symbol, { method: 'DELETE', headers: authHeaders() });
+            } else {
+                watchedSymbols.add(symbol);
+                el.textContent = '★'; el.classList.add('on');
+                await fetch('/api/watchlist', {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    body: JSON.stringify({ symbol: symbol })
+                });
+            }
+        }
+
+        // ── Custom sources ────────────────────────────────────────────────────
+        async function loadUserSources() {
+            if (!session || !authEnabled) return;
+            try {
+                var r = await fetch('/api/sources', { headers: authHeaders() });
+                if (!r.ok) return;
+                var d = await r.json();
+                var list = document.getElementById('saved-sources-list');
+                var section = document.getElementById('saved-sources-section');
+                if (!list || !section) return;
+                if (d.sources && d.sources.length > 0) {
+                    list.innerHTML = d.sources.map(function(u) {
+                        return '<li><a href="' + u + '" target="_blank" rel="noopener">' + u + '</a>' +
+                               ' <button class="rm-src" onclick="removeSource(this)" data-url="' + u.replace(/"/g, '&quot;') + '">✕</button></li>';
+                    }).join('');
+                    section.style.display = '';
+                } else {
+                    section.style.display = 'none';
+                }
+            } catch(e) {}
+        }
+
+        async function saveCurrentSource() {
+            if (!session) { openAuthModal('signin'); return; }
+            var url = document.getElementById('custom_url').value.trim();
+            if (!url) return;
+            await fetch('/api/sources', {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                body: JSON.stringify({ url: url })
+            });
+            await loadUserSources();
+        }
+
+        async function removeSource(btn) {
+            var url = btn.dataset.url;
+            await fetch('/api/sources', {
+                method: 'DELETE',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                body: JSON.stringify({ url: url })
+            });
+            await loadUserSources();
+        }
+
+        initAuth();
     </script>
+
+    <!-- Auth modal -->
+    <div class="auth-modal" id="auth-modal" onclick="closeAuthModal(event)">
+        <div class="auth-sheet">
+            <div class="auth-modal-head">
+                <h2 id="auth-modal-title">Welcome back</h2>
+                <button class="auth-close" onclick="closeAuthModal()">✕</button>
+            </div>
+            <p class="auth-sub">An account is optional — NewsToStocks works without one. Sign in to save your watchlist and custom feeds across sessions.</p>
+            <div class="auth-tabs">
+                <button class="auth-tab on" id="auth-tab-signin" onclick="switchAuthTab('signin')">Sign in</button>
+                <button class="auth-tab" id="auth-tab-signup" onclick="switchAuthTab('signup')">Sign up</button>
+            </div>
+            <button class="google-btn" onclick="signInWithGoogle()">
+                <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.4 26.7 36 24 36c-5.3 0-9.6-3.3-11.3-8l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.6l6.2 5.2C40.7 35.6 44 30.3 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+                Continue with Google
+            </button>
+            <div class="or-divider">or use email</div>
+            <input class="auth-field" id="auth-email" type="email" placeholder="Email address" autocomplete="email" />
+            <input class="auth-field" id="auth-password" type="password" placeholder="Password" autocomplete="current-password" />
+            <button class="auth-submit" id="auth-submit" onclick="submitAuthForm()">Sign in</button>
+            <div id="auth-msg"></div>
+        </div>
+    </div>
   <footer style="text-align:center;padding:18px 20px 24px;font-size:.75rem;color:#888;border-top:1px solid #222;margin-top:24px;">
     <strong style="color:#aaa">NewsToStocks</strong> &nbsp;·&nbsp;
     <a href="https://github.com/narin-kura/NewsToStocks" target="_blank" rel="noopener" style="color:#888">GitHub</a><br/>

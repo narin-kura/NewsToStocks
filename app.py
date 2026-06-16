@@ -11,9 +11,17 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import yfinance as yf
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__, template_folder='.', static_folder='.', static_url_path='')
+
+try:
+    from auth import get_user_id, supabase, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_CONFIGURED
+except ImportError:
+    def get_user_id(r): return None
+    supabase = None
+    SUPABASE_URL = SUPABASE_ANON_KEY = ''
+    SUPABASE_CONFIGURED = False
 
 sia = SentimentIntensityAnalyzer()
 
@@ -704,6 +712,90 @@ def search():
         articles_count=len(_article_store),
         cache_age_min=cache_age_min,
     )
+
+
+@app.route('/api/config')
+def api_config():
+    return jsonify({
+        'supabase_url': SUPABASE_URL,
+        'supabase_anon_key': SUPABASE_ANON_KEY,
+        'auth_enabled': SUPABASE_CONFIGURED,
+    })
+
+
+@app.route('/api/watchlist', methods=['GET'])
+def api_watchlist_get():
+    user_id = get_user_id(request)
+    if not user_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not supabase:
+        return jsonify({'error': 'Auth not configured'}), 503
+    result = supabase.table('nts_watchlist').select('symbol').eq('user_id', user_id).execute()
+    return jsonify({'watchlist': [r['symbol'] for r in result.data]})
+
+
+@app.route('/api/watchlist', methods=['POST'])
+def api_watchlist_add():
+    user_id = get_user_id(request)
+    if not user_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not supabase:
+        return jsonify({'error': 'Auth not configured'}), 503
+    symbol = (request.json or {}).get('symbol', '').upper().strip()
+    if not symbol:
+        return jsonify({'error': 'Missing symbol'}), 400
+    supabase.table('nts_watchlist').upsert({'user_id': user_id, 'symbol': symbol}).execute()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/watchlist/<symbol>', methods=['DELETE'])
+def api_watchlist_remove(symbol):
+    user_id = get_user_id(request)
+    if not user_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not supabase:
+        return jsonify({'error': 'Auth not configured'}), 503
+    supabase.table('nts_watchlist').delete().eq('user_id', user_id).eq('symbol', symbol.upper()).execute()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/sources', methods=['GET'])
+def api_sources_get():
+    user_id = get_user_id(request)
+    if not user_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not supabase:
+        return jsonify({'error': 'Auth not configured'}), 503
+    result = supabase.table('nts_sources').select('url').eq('user_id', user_id).execute()
+    return jsonify({'sources': [r['url'] for r in result.data]})
+
+
+@app.route('/api/sources', methods=['POST'])
+def api_sources_add():
+    user_id = get_user_id(request)
+    if not user_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not supabase:
+        return jsonify({'error': 'Auth not configured'}), 503
+    url = (request.json or {}).get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'Missing url'}), 400
+    supabase.table('nts_sources').upsert({'user_id': user_id, 'url': url}).execute()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/sources', methods=['DELETE'])
+def api_sources_remove():
+    user_id = get_user_id(request)
+    if not user_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not supabase:
+        return jsonify({'error': 'Auth not configured'}), 503
+    url = (request.json or {}).get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'Missing url'}), 400
+    supabase.table('nts_sources').delete().eq('user_id', user_id).eq('url', url).execute()
+    return jsonify({'ok': True})
 
 
 if __name__ == '__main__':

@@ -75,7 +75,8 @@ jobs:
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/apps/${{ env.SERVICE }} \
             --region ${{ env.REGION }} \
             --port 7860 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --set-secrets=SUPABASE_URL=supabase-url:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest
 
       - name: Show service URL
         run: |

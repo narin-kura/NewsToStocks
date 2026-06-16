@@ -590,3 +590,135 @@ details[open] summary::before { content: "▼"; }
 .intro-item strong { display: block; font-size: 0.83rem; color: var(--text); margin-bottom: 2px; }
 .intro-item p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
 .intro-item em { font-style: normal; color: var(--accent); }
+
+/* ── Account area ── */
+.signin-link {
+    width: 100%; padding: 0.5rem 1rem;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: background 0.15s;
+}
+.signin-link:hover { background: var(--accent-hover); }
+
+.account-combo { position: relative; }
+.account-trigger {
+    display: flex; align-items: center; gap: 0.4rem; width: 100%;
+    padding: 0.4rem 0.6rem; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; color: var(--text); font-size: 0.8rem;
+    transition: border-color 0.15s;
+}
+.account-trigger:hover { border-color: var(--accent); }
+.account-avatar {
+    width: 22px; height: 22px; background: var(--accent); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; font-weight: 700; flex-shrink: 0;
+}
+.account-email {
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 0.74rem; color: var(--muted); text-align: left;
+}
+.account-drop {
+    position: absolute; top: calc(100% + 5px); left: 0; right: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; z-index: 50;
+}
+.ad-item {
+    display: block; width: 100%; padding: 0.5rem 0.85rem;
+    font-size: 0.8rem; color: var(--text); background: none;
+    border: none; text-align: left; cursor: pointer; transition: background 0.12s;
+}
+.ad-item:hover { background: var(--border); }
+.ad-label { color: var(--muted); font-size: 0.71rem; cursor: default; }
+.ad-label:hover { background: none; }
+
+/* ── Watch button ── */
+.watch-btn {
+    flex-shrink: 0; background: none;
+    border: 1px solid var(--border); border-radius: 6px;
+    color: var(--muted); font-size: 0.78rem;
+    padding: 0.1rem 0.4rem; cursor: pointer; line-height: 1.4;
+    transition: border-color 0.12s, color 0.12s;
+}
+.watch-btn:hover { border-color: var(--accent); color: var(--accent); }
+.watch-btn.on { border-color: #f59e0b; color: #f59e0b; }
+
+/* ── Auth modal ── */
+.auth-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 200;
+    align-items: center; justify-content: center;
+}
+.auth-modal.open { display: flex; }
+.auth-sheet {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; width: min(400px, 92vw); padding: 1.5rem;
+    position: relative;
+}
+.auth-modal-head {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 0.9rem;
+}
+.auth-modal-head h2 { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.auth-close {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--muted); width: 26px; height: 26px; cursor: pointer;
+    font-size: 0.78rem; display: flex; align-items: center; justify-content: center;
+}
+.auth-close:hover { color: var(--text); border-color: var(--text); }
+.auth-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.9rem; line-height: 1.5; }
+.auth-tabs {
+    display: flex; gap: 0.25rem; margin-bottom: 0.9rem;
+    background: var(--bg); border-radius: 8px; padding: 3px;
+}
+.auth-tab {
+    flex: 1; padding: 0.38rem; border: none; border-radius: 6px;
+    background: none; color: var(--muted); font-size: 0.81rem;
+    font-weight: 600; cursor: pointer; transition: background 0.12s, color 0.12s;
+}
+.auth-tab.on { background: var(--surface); color: var(--text); }
+.google-btn {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    width: 100%; padding: 0.55rem 1rem; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-size: 0.85rem; font-weight: 500; cursor: pointer; margin-bottom: 0.7rem;
+    transition: border-color 0.15s, background 0.15s;
+}
+.google-btn:hover { border-color: var(--accent); background: var(--border); }
+.or-divider {
+    text-align: center; color: var(--muted); font-size: 0.73rem;
+    margin: 0.6rem 0; position: relative;
+}
+.or-divider::before, .or-divider::after {
+    content: ''; position: absolute; top: 50%;
+    width: 38%; border-top: 1px solid var(--border);
+}
+.or-divider::before { left: 0; }
+.or-divider::after  { right: 0; }
+.auth-field {
+    display: block; width: 100%; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.52rem 0.75rem; color: var(--text); font-size: 0.85rem;
+    outline: none; margin-bottom: 0.55rem; transition: border-color 0.15s;
+}
+.auth-field::placeholder { color: var(--muted); }
+.auth-field:focus { border-color: var(--accent); }
+.auth-submit {
+    width: 100%; padding: 0.58rem 1rem; background: var(--accent);
+    color: #fff; border: none; border-radius: 8px;
+    font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    margin-top: 0.2rem; transition: background 0.15s;
+}
+.auth-submit:hover { background: var(--accent-hover); }
+.auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.auth-error { margin-top: 0.55rem; font-size: 0.78rem; color: var(--red); }
+.auth-ok    { margin-top: 0.55rem; font-size: 0.78rem; color: var(--green); }
+
+/* ── Saved sources remove button ── */
+.rm-src {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 0.68rem; padding: 0 0.2rem;
+    vertical-align: middle;
+}
+.rm-src:hover { color: var(--red); }
