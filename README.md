@@ -1,28 +1,36 @@
 ---
-title: investment-ai-agent/
+title: MarketSignal — Financial News Intelligence
 sdk: docker
+colorFrom: blue
 colorTo: green
 pinned: true
 ---
-# Investment Recommendation AI Agent
 
-[![Hugging Face](https://img.shields.io/badge/Live%20App-Hugging%20Face-green?style=flat-square&logo=huggingface)](https://knnarin-newstostocks.hf.space)
-[![Google Cloud Run](https://img.shields.io/badge/Live%20App-GCP%20Cloud%20Run-green?style=flat-square&logo=google-cloud)](https://newstostocks-h5axc6napq-uc.a.run.app/)
+# MarketSignal 📈
+*formerly NewsToStocks*
 
-This AI agent scrapes financial news, analyzes sentiment, and recommends stocks based on correlations.
+[![Website](https://img.shields.io/badge/Live%20App-marketsignal.vigyatri.com-blue?style=flat-square&logo=google-chrome)](https://marketsignal.vigyatri.com)
+[![Hugging Face](https://img.shields.io/badge/Mirror-Hugging%20Face-gray?style=flat-square&logo=huggingface)](https://knnarin-newstostocks.hf.space)
+[![Google Cloud Run](https://img.shields.io/badge/Powered%20by-GCP%20Cloud%20Run-gray?style=flat-square&logo=google-cloud)](https://newstostocks-h5axc6napq-uc.a.run.app/)
 
-## Features:
-- Scrapes news from CNBC, Bloomberg, and Reuters
-- Performs sentiment analysis using TextBlob
-- Suggests stock investments based on correlation analysis
-- Allows users to add custom news sources
+AI-powered financial news intelligence — scans 15+ live sources every 15 minutes, runs sentiment analysis, and surfaces stocks with the strongest positive momentum across 25 market sectors.
 
-## Deployment:
-This Space is built using Flask and deployed on Hugging Face.
+**For educational purposes only — not financial advice.**
 
-## Usage:
-1. Enter a sector (optional) to filter recommendations.
-2. Add a custom news source if needed.
-3. Click the "Get Recommendations" button.
+## Features
+- Live news scanning from Reuters, CNBC, WSJ, MarketWatch and 15+ sources
+- TextBlob sentiment analysis across 25 market sectors
+- S&P 500 + NASDAQ stock coverage
+- Custom RSS feed support
+- Watchlist — save stocks to track (sign in required)
+- Saved feeds — persist custom sources across sessions (sign in required)
+
+## Deployment
+Built with Flask, deployed on Hugging Face Spaces and GCP Cloud Run via GitHub Actions.
+
+## Usage
+1. Pick a sector from the sidebar to filter results
+2. Add a custom RSS feed to scan additional sources
+3. Sign in to save your watchlist and custom feeds across sessions
 
 ---
