@@ -433,7 +433,7 @@
             if (!area) return;
             if (!authEnabled) { area.innerHTML = ''; return; }
             if (!session) {
-                area.innerHTML = '<button class="signin-link" onclick="openAuthModal(\'signin\')">Sign in</button>';
+                area.innerHTML = '<button class="signin-link" onclick="openAuthModal(\'signin\')">👤 Sign in to save</button>';
                 return;
             }
             var email = (session.user && session.user.email) ? session.user.email : '';
