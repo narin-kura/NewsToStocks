@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NewsToStocks{% if sector %} — {{ sector | capitalize }}{% endif %}</title>
+    <title>MarketSignal{% if sector %} — {{ sector | capitalize }}{% endif %}</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -19,7 +19,8 @@
         <aside class="sidebar">
             <div class="brand">
                 <span class="brand-icon">&#9650;</span>
-                <span class="brand-name">NewsToStocks</span>
+                <span class="brand-name">MarketSignal</span>
+                <span class="brand-formerly">formerly NewsToStocks</span>
             </div>
             <p class="brand-desc">Surfaces stocks with the strongest positive sentiment from live financial news.</p>
 
@@ -608,7 +609,7 @@
                 <h2 id="auth-modal-title">Welcome back</h2>
                 <button class="auth-close" onclick="closeAuthModal()">✕</button>
             </div>
-            <p class="auth-sub">An account is optional — NewsToStocks works without one. Sign in to save your watchlist and custom feeds across sessions.</p>
+            <p class="auth-sub">An account is optional — MarketSignal works without one. Sign in to save your watchlist and custom feeds across sessions.</p>
             <div class="auth-tabs">
                 <button class="auth-tab on" id="auth-tab-signin" onclick="switchAuthTab('signin')">Sign in</button>
                 <button class="auth-tab" id="auth-tab-signup" onclick="switchAuthTab('signup')">Sign up</button>
@@ -625,7 +626,7 @@
         </div>
     </div>
   <footer style="text-align:center;padding:18px 20px 24px;font-size:.75rem;color:#888;border-top:1px solid #222;margin-top:24px;">
-    <strong style="color:#aaa">NewsToStocks</strong> &nbsp;·&nbsp;
+    <strong style="color:#aaa">MarketSignal</strong> &nbsp;·&nbsp;
     <a href="https://github.com/narin-kura/NewsToStocks" target="_blank" rel="noopener" style="color:#888">GitHub</a><br/>
     © 2025–2026 <a href="https://github.com/narin-kura" target="_blank" rel="noopener" style="color:#888">K.N.Narin</a> &nbsp;·&nbsp; Non-commercial use only &nbsp;·&nbsp;
     Commercial licensing: <a href="https://github.com/narin-kura" target="_blank" rel="noopener" style="color:#888">contact via GitHub</a><br/>
