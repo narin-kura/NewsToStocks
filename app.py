@@ -714,6 +714,121 @@ def search():
     )
 
 
+# ---------------------------------------------------------------------------
+# JSON API for the MarketSignal mobile app (additive — the website routes above
+# are unchanged). All responses are snake_case for easy client typing.
+# ---------------------------------------------------------------------------
+
+def _signal_to_json(rec):
+    """Serialize a recommendation/search rec to a stable snake_case shape."""
+    return {
+        'symbol': rec.get('Symbol'),
+        'company_name': rec.get('CompanyName'),
+        'mentions': rec.get('Mentions', 0),
+        'avg_sentiment': rec.get('Avg Sentiment', rec.get('AvgSentiment', 0)),
+        'price': rec.get('Price'),  # {'price', 'change_pct'} or null
+        'articles': rec.get('Articles', []),
+        'neg_articles': rec.get('NegArticles', []),
+    }
+
+
+def _resolve_symbol(q):
+    """Resolve a free-text query to a ticker symbol, or None."""
+    q_upper, q_lower = q.upper(), q.lower()
+    if q_upper in _all_symbols:
+        return q_upper
+    for company, sym in company_to_symbol.items():
+        if q_lower == company.lower() or q_lower in company.lower():
+            return sym
+    return None
+
+
+@app.route('/api/health')
+def api_health():
+    return jsonify({'name': 'MarketSignal API', 'version': '1.0.0', 'status': 'running'})
+
+
+@app.route('/api/tabs')
+def api_tabs():
+    """Sector tabs and sort options so the app can render them dynamically."""
+    return jsonify({
+        'tabs':  [{'key': k, 'label': label} for k, label in TABS],
+        'sorts': [{'key': k, 'label': label} for k, label in SORT_OPTIONS],
+    })
+
+
+@app.route('/api/signals')
+def api_signals():
+    """Core feed: ranked stock signals for a sector, mirroring the home() page."""
+    sector = (request.args.get('sector') or '').strip()
+    sort = request.args.get('sort', 'score').strip()
+
+    news_data, cache_ts = get_cached_news()
+    cache_entry = _sector_cache.get(sector)
+    recs = list(cache_entry['recs']) if cache_entry is not None else recommend_stocks(news_data, sector=sector or None)
+
+    recommendations = _apply_sort(recs, sort)
+    return jsonify({
+        'sector': sector,
+        'sort': sort,
+        'cache_age_min': int((time.time() - cache_ts) / 60),
+        'articles_count': len(_article_store),
+        'performance': _perf_summary(recommendations),
+        'signals': [_signal_to_json(r) for r in recommendations],
+    })
+
+
+@app.route('/api/search')
+def api_search():
+    """Search a ticker/company and return its sentiment + articles as JSON."""
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify({'error': 'Missing query parameter q'}), 400
+
+    news_data, cache_ts = get_cached_news()
+    symbol = _resolve_symbol(q)
+
+    if not symbol:
+        return jsonify({
+            'query': q,
+            'found': False,
+            'result': None,
+            'cache_age_min': int((time.time() - cache_ts) / 60),
+        })
+
+    pos_articles, neg_articles = [], []
+    pos_total, pos_count = 0.0, 0
+    for item in _article_store.values():
+        if symbol in item['companies']:
+            if item['score'] >= 0.05:
+                pos_total += item['score']
+                pos_count += 1
+                pos_articles.append({'preview': item['preview'], 'url': item['url'], 'source': item.get('source')})
+            elif item['score'] <= -0.05:
+                neg_articles.append({'preview': item['preview'], 'url': item['url'], 'source': item.get('source')})
+
+    _, price_data = fetch_price(symbol)
+    company_name = next(
+        (name for name, sym in company_to_symbol.items() if sym == symbol and len(name) > 3),
+        symbol,
+    )
+
+    return jsonify({
+        'query': q,
+        'found': True,
+        'cache_age_min': int((time.time() - cache_ts) / 60),
+        'result': _signal_to_json({
+            'Symbol': symbol,
+            'CompanyName': company_name,
+            'Mentions': pos_count,
+            'AvgSentiment': round(pos_total / pos_count, 3) if pos_count else 0,
+            'Articles': pos_articles,
+            'NegArticles': neg_articles,
+            'Price': price_data,
+        }),
+    })
+
+
 @app.route('/api/config')
 def api_config():
     return jsonify({
