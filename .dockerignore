@@ -1,0 +1,14 @@
+# Mobile app source — not part of the web service (keeps it out of the image
+# and out of Flask's repo-root static serving)
+mobile/
+
+# VCS / local
+.git/
+.github/
+*.md
+
+# Python caches
+__pycache__/
+*.pyc
+.venv/
+venv/

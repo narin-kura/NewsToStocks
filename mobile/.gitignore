@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# Expo / EAS
+.expo/
+dist/
+web-build/
+*.orig.*
+
+# native
+ios/
+android/
+
+# misc
+npm-debug.*
+*.log
+.DS_Store
