@@ -1,4 +1,5 @@
 flask
+Flask-Limiter>=3.5
 gunicorn
 beautifulsoup4
 lxml

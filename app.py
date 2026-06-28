@@ -12,8 +12,20 @@ from bs4 import BeautifulSoup
 import yfinance as yf
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from flask import Flask, render_template, request, jsonify
+from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__, template_folder='.', static_folder='.', static_url_path='')
+
+# Trust one proxy hop (Cloud Run / HF Spaces) so rate limiting keys on the real
+# client IP from X-Forwarded-For, not the shared proxy address.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
+# In-memory rate limiting. No global default — limits are applied per-route below
+# so static assets and the home page aren't throttled. (For multi-instance scaling
+# swap storage_uri to a shared Redis to enforce limits globally.)
+limiter = Limiter(key_func=get_remote_address, app=app, storage_uri="memory://")
 
 try:
     from auth import get_user_id, supabase, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_CONFIGURED
@@ -619,6 +631,7 @@ def _perf_summary(recs):
 
 
 @app.route('/', methods=['GET', 'POST'])
+@limiter.limit("60 per minute")
 def home():
     sector = (request.args.get('sector') or request.form.get('sector', '')).strip()
     sort   = request.args.get('sort', 'score').strip()
@@ -650,6 +663,7 @@ def home():
 
 
 @app.route('/search')
+@limiter.limit("30 per minute")
 def search():
     q = request.args.get('q', '').strip()
     q_upper = q.upper()
@@ -758,6 +772,7 @@ def api_tabs():
 
 
 @app.route('/api/signals')
+@limiter.limit("60 per minute")
 def api_signals():
     """Core feed: ranked stock signals for a sector, mirroring the home() page."""
     sector = (request.args.get('sector') or '').strip()
@@ -779,6 +794,7 @@ def api_signals():
 
 
 @app.route('/api/search')
+@limiter.limit("30 per minute")
 def api_search():
     """Search a ticker/company and return its sentiment + articles as JSON."""
     q = request.args.get('q', '').strip()
